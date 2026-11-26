@@ -205,15 +205,29 @@ struct QQMusicAPI {
     // MARK: - 播放地址（vkey 链路，实测可用）
 
     func playbackSource(id: Int) async throws -> PlaybackSource {
-        try await playbackSource(id: id, quality: .high)
+        try await playbackSource(id: id, quality: .high, metadata: nil)
     }
 
     func playbackSource(for song: Song) async throws -> PlaybackSource {
-        try await playbackSource(id: song.id, quality: .high)
+        try await playbackSource(
+            id: song.id,
+            quality: .high,
+            metadata: (
+                name: song.name,
+                artist: song.artists.map(\.name).joined(separator: " ")
+            )
+        )
     }
 
     func downloadSource(for song: Song, quality: MusicQuality) async throws -> PlaybackSource {
-        try await playbackSource(id: song.id, quality: quality)
+        try await playbackSource(
+            id: song.id,
+            quality: quality,
+            metadata: (
+                name: song.name,
+                artist: song.artists.map(\.name).joined(separator: " ")
+            )
+        )
     }
 
     /// 申请播放地址。
@@ -228,24 +242,57 @@ struct QQMusicAPI {
     /// 3. 命中缓存直接返回。purl 有效期约 20 分钟，这里保守缓存 10 分钟。
     private func playbackSource(
         id: Int,
-        quality: MusicQuality
+        quality: MusicQuality,
+        metadata: (name: String, artist: String)?
     ) async throws -> PlaybackSource {
         let cacheKey = "\(id):\(quality.rawValue)"
         if let cached = QQVkeyStore.cached(cacheKey) { return cached }
 
         guard let songMID = try await resolveSongMID(songID: id) else {
-            throw APIError.noPlayableSource
+            // 连 songmid 都解析不出来，QQ 侧无从申请，直接走镜像音源。
+            let mirrored = try await mirrorSource(for: id, metadata: metadata)
+            QQVkeyStore.store(mirrored, for: cacheKey)
+            return mirrored
         }
         // vkey 的 filename 用 media_mid；与 songmid 不同，缺失时退回 songmid。
         let mediaMID = QQIDRegistry.shared.mid(entity: "media", numericID: id) ?? songMID
 
-        let source = try await requestVkey(
-            songMID: songMID,
-            mediaMID: mediaMID,
-            quality: quality
-        )
-        QQVkeyStore.store(source, for: cacheKey)
-        return source
+        do {
+            let source = try await requestVkey(
+                songMID: songMID,
+                mediaMID: mediaMID,
+                quality: quality
+            )
+            QQVkeyStore.store(source, for: cacheKey)
+            return source
+        } catch {
+            // 匿名 vkey 对任何歌曲都返回 result = 104003（服务端无权限），
+            // 登录态下 VIP / 地区受限曲目同样拿不到 purl。
+            // 此时回落到公开镜像音源，宁可播到同名的另一版本，也不要一直转圈。
+            let mirrored = try await mirrorSource(for: id, metadata: metadata)
+            QQVkeyStore.store(mirrored, for: cacheKey)
+            return mirrored
+        }
+    }
+
+    /// QQ 拿不到 purl 时的兜底：用歌名 + 歌手在公开镜像源取流。
+    /// 元数据优先用调用方传进来的（详情页 / 队列里已经有 Song 对象），
+    /// 缺失时再查一次 QQ 详情。
+    private func mirrorSource(
+        for id: Int,
+        metadata: (name: String, artist: String)?
+    ) async throws -> PlaybackSource {
+        var name = metadata?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        var artist = metadata?.artist.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if name.isEmpty {
+            let detail = (try? await songDetails(ids: [id]))?.first
+            name = detail?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            artist = detail?.artists.map(\.name).joined(separator: " ") ?? ""
+        }
+
+        guard !name.isEmpty else { throw APIError.noPlayableSource }
+        return try await QQMateMirror.playbackSource(name: name, artist: artist)
     }
 
     /// 一次请求同时申请所需品质与全部降级档位。
