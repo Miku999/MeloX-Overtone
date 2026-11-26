@@ -159,11 +159,20 @@ struct NowPlayingQualityMenu: View {
                     }
                 }
             }
+            if let effective = player.effectivePlaybackQuality,
+               effective != preferredQuality {
+                Divider()
+                Text(L10n.format("ui.player.actual_quality", effective.title))
+            }
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "waveform")
                     .font(.system(size: 9, weight: .semibold))
                 Text(displayedQualityTitle)
+                if isDownscaled {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 8, weight: .bold))
+                }
             }
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
@@ -179,17 +188,37 @@ struct NowPlayingQualityMenu: View {
         .accessibilityHint("ui.player.quality_hint")
     }
 
+    /// 用户在设置里选的音质（蜂窝网络下用蜂窝档）。
+    private var preferredQuality: MusicQuality {
+        api.isCellularData
+            ? settings.cellularQuality
+            : settings.quality
+    }
+
+    /// 标题显示**所选**音质，而不是实际解析到的音质。
+    ///
+    /// 原来读 `effectivePlaybackQuality`：QQ 侧无损基本申请不到 purl，
+    /// 实际总降到 320k，于是菜单里勾着「无损」、标题却写「高品质」，
+    /// 看着像设置没生效。实际发生了降级时用末尾的 ↓ 和菜单里那行
+    /// 「实际播放：xxx」表达，不再让标题和勾选打架。
     private var displayedQualityTitle: String {
-        player.effectivePlaybackQuality?.title ?? L10n.string("ui.player.quality")
+        guard player.currentSong != nil else {
+            return L10n.string("ui.player.quality")
+        }
+        return preferredQuality.title
+    }
+
+    /// 实际拿到的音质低于所选。
+    private var isDownscaled: Bool {
+        guard let effective = player.effectivePlaybackQuality else {
+            return false
+        }
+        return effective != preferredQuality
     }
 
     private var qualityBinding: Binding<MusicQuality> {
         Binding(
-            get: {
-                api.isCellularData
-                    ? settings.cellularQuality
-                    : settings.quality
-            },
+            get: { preferredQuality },
             set: { player.selectPlaybackQuality($0) }
         )
     }

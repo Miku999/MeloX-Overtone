@@ -13,7 +13,11 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: L10n.string("ui.navigation.home")
         case .explore: L10n.string("ui.navigation.explore")
-        case .podcasts: L10n.string("ui.navigation.podcasts")
+        case .podcasts:
+            // QQ 音乐没有播客品类，这一格换成「收藏歌曲」，直连「我喜欢」。
+            QQMusicBackend.enabled
+                ? L10n.string("ui.navigation.library.liked_songs")
+                : L10n.string("ui.navigation.podcasts")
         case .library: L10n.string("ui.navigation.library")
         case .search: L10n.string("ui.navigation.search")
         }
@@ -23,7 +27,10 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: "house"
         case .explore: "square.grid.2x2.fill"
-        case .podcasts: "dot.radiowaves.left.and.right"
+        case .podcasts:
+            QQMusicBackend.enabled
+                ? "heart.fill"
+                : "dot.radiowaves.left.and.right"
         case .library: "music.note.list"
         case .search: "magnifyingglass"
         }

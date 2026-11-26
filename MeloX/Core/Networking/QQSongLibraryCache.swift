@@ -40,6 +40,15 @@ final class QQSongLibraryCache {
         midStorage[id]
     }
 
+    /// 当前缓存里的全部曲目，按登记顺序返回。
+    /// 心动模式在 QQ 侧没有可用接口时，用它当推荐池。
+    func allSongs(limit: Int = 2_000) -> [Song] {
+        guard limit > 0 else { return [] }
+        return Array(storage.values.prefix(limit))
+    }
+
+    var count: Int { storage.count }
+
     func clear() {
         storage.removeAll()
         midStorage.removeAll()

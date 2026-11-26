@@ -1218,6 +1218,59 @@ struct QQMusicAPI {
         []
     }
 
+    /// 「心动模式」的 QQ 实现。
+    ///
+    /// QQ 侧没有可用的智能播放接口：`music.similarSong.SimilarSong`、
+    /// `music.similarSong.GetSimilarSong`、`music.musichallSong.SongInfoRead`
+    /// 实测一律 `500003`，`music.recommend.RecommendFeed` 回 `40000`，
+    /// 新版推荐接口还要求签名。所以按这个功能的语义在本地生成：
+    /// 以「我喜欢」（或调用方给的歌单）为池，剔掉种子曲后打乱，
+    /// 把种子曲放在队首，接上推荐。列表非空就一定播得动。
+    func heartModeSongs(
+        seedSongID: Int,
+        playlistID: Int,
+        limit: Int = 30
+    ) async throws -> [Song] {
+        let uin = QQAuthStore.uin
+        let playlists = (try? await userPlaylists(userID: uin)) ?? []
+        let likedPlaylistID = playlists.first?.id
+
+        var pool: [Song] = []
+        if let likedPlaylistID, likedPlaylistID == playlistID {
+            let references = (try? await likedSongReferences(
+                userID: uin,
+                likedPlaylistID: likedPlaylistID
+            ))?.references ?? []
+            if !references.isEmpty {
+                pool = (try? await songDetails(ids: references.map(\.id))) ?? []
+            }
+        }
+        if pool.isEmpty, let detail = try? await playlist(id: playlistID) {
+            pool = detail.tracks
+        }
+        if pool.isEmpty {
+            pool = QQSongLibraryCache.shared.allSongs(limit: 2_000)
+        }
+
+        let seed = QQSongLibraryCache.shared.song(for: seedSongID)
+            ?? (try? await songDetails(ids: [seedSongID]))?.first
+
+        var candidates = pool.filter { song in
+            song.id != seedSongID && song.id != 0 && !song.isPodcastProgram
+        }
+        if candidates.count > 1 {
+            candidates.shuffle()
+        }
+
+        var result: [Song] = []
+        if let seed {
+            result.append(seed)
+        }
+        result.append(contentsOf: candidates.prefix(max(limit, 1)))
+        guard !result.isEmpty else { throw APIError.noPlayableSource }
+        return result
+    }
+
     /// 把歌单响应里的原始曲目写进缓存。
     ///
     /// 不做 `register(songID:songMID:)`：`QQModelAdapter.song(from:)` 内部

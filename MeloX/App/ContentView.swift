@@ -473,7 +473,13 @@ struct ContentView: View {
             HomeRecommendedView()
                 .navigationTitle(tab.title)
         case .podcasts:
-            PodcastHomeView()
+            // QQ 音乐没有播客，这一格给「收藏歌曲」用，直接渲染「我喜欢」的曲目。
+            if QQMusicBackend.enabled {
+                LibrarySongsView(searchQuery: "")
+                    .navigationTitle(tab.title)
+            } else {
+                PodcastHomeView()
+            }
         case .explore:
             ExploreView()
         case .library:

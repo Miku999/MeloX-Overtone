@@ -73,14 +73,20 @@ final class PlayerStore {
     var availablePlaybackQualities: [MusicQuality] {
         guard currentSong != nil else { return [] }
         guard !isResolvingCurrentSongAudioAvailability else { return [] }
+        // 偏好档位必须始终在列表里：QQ 侧「无损」常常申请不到 purl，
+        // 若只按 supports() 过滤，菜单里连勾选项都会消失。
+        let preferred = api.isCellularData
+            ? settings.cellularQuality
+            : settings.quality
         if currentSongAudioAvailability.isKnown {
             return MusicQuality.allCases.filter { quality in
                 currentSongAudioAvailability.supports(
                     apiLevel: quality.apiLevel
                 ) == true || quality == effectivePlaybackQuality
+                    || quality == preferred
             }
         }
-        return effectivePlaybackQuality.map { [$0] } ?? []
+        return [preferred]
     }
 
     private var playbackQueue = PlaybackQueue()
@@ -638,18 +644,31 @@ final class PlayerStore {
         let currentQuality = targetsCellularData
             ? settings.cellularQuality
             : settings.quality
-        guard currentQuality != quality else { return }
+        // 同一档位再点一次：只有当前实际播到的音质低于所选时才强制重取，
+        // 否则重复点同一项不该触发重新加载。
+        let isSameQuality = currentQuality == quality
+        if isSameQuality, let effective = effectivePlaybackQuality,
+           effective == quality {
+            return
+        }
         let shouldAutoplay = isPlaying
             || (isLoading && currentLoadShouldAutoplay)
         let resumePosition = engine.currentPlaybackTime
             ?? estimatedProgress()
         let songID = currentSong?.id
-        if targetsCellularData {
-            settings.cellularQuality = quality
-        } else {
-            settings.quality = quality
+        if !isSameQuality {
+            if targetsCellularData {
+                settings.cellularQuality = quality
+            } else {
+                settings.quality = quality
+            }
         }
         guard targetsCellularData == api.isCellularData, let songID else { return }
+        if isSameQuality {
+            // 同档位重试必须丢掉播放地址缓存，否则取回来的还是刚才那份
+            // 降级源，用户点了半天没有任何变化。
+            QQVkeyStore.invalidateAll()
+        }
         seekRevision += 1
         let qualityChangeRevision = seekRevision
         Task { @MainActor [weak self] in

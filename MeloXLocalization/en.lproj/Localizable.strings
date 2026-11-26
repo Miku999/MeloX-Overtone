@@ -1372,6 +1372,7 @@
 "ui.player.quality" = "Quality";
 "ui.player.playback_quality" = "Playback Quality";
 "ui.player.quality_hint" = "Tap to adjust quality for the current song";
+"ui.player.actual_quality" = "Now playing: %@";
 "ui.player.volume" = "Player Volume";
 "ui.player.system_volume" = "System Volume";
 "ui.player.queue" = "Playback Queue";

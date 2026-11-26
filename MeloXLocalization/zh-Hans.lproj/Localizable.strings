@@ -1372,6 +1372,7 @@
 "ui.player.quality" = "音质";
 "ui.player.playback_quality" = "播放音质";
 "ui.player.quality_hint" = "轻点调整当前歌曲音质";
+"ui.player.actual_quality" = "实际播放：%@";
 "ui.player.volume" = "播放器音量";
 "ui.player.system_volume" = "系统音量";
 "ui.player.queue" = "播放队列";

@@ -5,6 +5,15 @@ extension NeteaseAPI {
         seedSongID: Int,
         playlistID: Int
     ) async throws -> [Song] {
+        // QQ 音乐没有这个接口，走后端内的本地生成实现。
+        // 不打这条分流的话请求会落到 eapi，未带网易云登录态时返回 301，
+        // 用户看到的就是「音乐服务返回了错误（301）」。
+        if QQMusicBackend.enabled {
+            return try await qq.heartModeSongs(
+                seedSongID: seedSongID,
+                playlistID: playlistID
+            )
+        }
         // Mirrors @neteaseapireborn/api/module/playmode_intelligence_list.js.
         let response: IntelligenceModeResponse = try await client.eapi(
             "/api/playmode/intelligence/list",
