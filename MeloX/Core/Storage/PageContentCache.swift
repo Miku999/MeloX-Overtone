@@ -53,7 +53,8 @@ final class PageContentCache {
 }
 
 private actor PageContentCacheStorage {
-    static let shared = PageContentCacheStorage()    private let database: DatabaseQueue?
+    static let shared = PageContentCacheStorage()
+    private let database: DatabaseQueue?
 
     init(directory: URL = AppStorageLocations.pageContentCacheDirectory()) {
         do {
