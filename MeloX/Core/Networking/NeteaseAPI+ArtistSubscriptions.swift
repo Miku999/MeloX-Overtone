@@ -2,6 +2,7 @@ import Foundation
 
 extension NeteaseAPI {
     func subscribedArtists(limit: Int = 2_000) async throws -> [Artist] {
+        if QQMusicBackend.enabled { return try await qq.subscribedArtists(limit: limit) }
         let path = "/api/artist/sublist"
         let data: [String: Any] = [
             "limit": max(limit, 1),
@@ -26,6 +27,7 @@ extension NeteaseAPI {
     }
 
     func setArtistFollowed(id: Int, isFollowed: Bool) async throws {
+        if QQMusicBackend.enabled { return try await qq.setArtistFollowed(id: id, isFollowed: isFollowed) }
         let path = isFollowed ? "/api/artist/sub" : "/api/artist/unsub"
         let data: [String: Any] = [
             "artistId": id,
