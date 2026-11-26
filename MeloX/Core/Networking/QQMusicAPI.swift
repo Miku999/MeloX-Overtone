@@ -1252,8 +1252,13 @@ struct QQMusicAPI {
             pool = QQSongLibraryCache.shared.allSongs(limit: 2_000)
         }
 
-        let seed = QQSongLibraryCache.shared.song(for: seedSongID)
-            ?? (try? await songDetails(ids: [seedSongID]))?.first
+        // 不能用 `??  (try? await ...)`：`??` 右侧是 autoclosure，
+        // 不接受 await（CI 报 `'async' call in a function that does not
+        // support concurrency`）。拆成两步。
+        var seed = QQSongLibraryCache.shared.song(for: seedSongID)
+        if seed == nil {
+            seed = (try? await songDetails(ids: [seedSongID]))?.first
+        }
 
         var candidates = pool.filter { song in
             song.id != seedSongID && song.id != 0 && !song.isPodcastProgram
