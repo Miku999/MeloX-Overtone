@@ -59,7 +59,8 @@ struct ContentView: View {
     /// 否则登录成功后 LibraryStore 不会重新拉账号数据。
     private var accountTaskID: String {
         if QQMusicBackend.enabled {
-            return QQAuthStore.isLoggedIn ? "qq://(QQAuthStore.uin)" : ""
+            guard QQAuthStore.isLoggedIn else { return "" }
+            return "qq:" + String(QQAuthStore.uin)
         }
         return settings.cookie
     }
