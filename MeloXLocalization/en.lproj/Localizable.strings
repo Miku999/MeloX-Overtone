@@ -1093,7 +1093,7 @@
 "ui.home.error.current_song_required" = "Play a song before searching for similar music.";
 "ui.home.error.no_playable_recommendations" = "QQ Music did not return any playable recommendations.";
 "ui.home.section.recommended_playlists" = "Recommended Playlists";
-"ui.home.section.recently_trending" = "Trending in Cloud Village";
+"ui.home.section.recently_trending" = "Trending on QQ Music";
 "ui.home.section.tailored" = "Recommended for Your Taste";
 "ui.home.section.charts" = "Charts";
 "ui.home.section.your_playlists" = "Your Playlists";
