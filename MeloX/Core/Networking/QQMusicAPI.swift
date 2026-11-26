@@ -266,6 +266,7 @@ struct QQMusicAPI {
         ]
         var seenPrefixes: Set<String> = []
         ladder = ladder.filter { seenPrefixes.insert($0.prefix).inserted }
+        guard !ladder.isEmpty else { throw APIError.noPlayableSource }
 
         // 申请时同时带上 media_mid 与 song_mid 两个版本。QQ 的 filename 用
         // media_mid，但 media_mid 从 registry 缺失时只能退回 song_mid；
