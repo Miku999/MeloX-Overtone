@@ -31,8 +31,26 @@ DISPLAY_NAME="${QQ_APP_DISPLAY_NAME:-Overtone QQ}"
 TEMP_PROJECT=""
 TEMP_APP_INFO=""
 TEMP_WATCH_INFO=""
+ICON_STASH=""
+ICON_MOVED=()
+
+restore_icons() {
+  local pair src dst
+  for pair in ${ICON_MOVED[@]+"${ICON_MOVED[@]}"}; do
+    src="${pair%%|*}"
+    dst="${pair##*|}"
+    if [[ -e "$dst" && ! -e "$src" ]]; then
+      mv "$dst" "$src"
+    fi
+  done
+  if [[ -n "$ICON_STASH" && -d "$ICON_STASH" ]]; then
+    rmdir "$ICON_STASH" 2>/dev/null || true
+  fi
+  return 0
+}
 
 cleanup() {
+  restore_icons
   [[ -n "$TEMP_PROJECT" && -e "$TEMP_PROJECT" ]] && rm -rf -- "$TEMP_PROJECT"
   [[ -n "$TEMP_APP_INFO" && -f "$TEMP_APP_INFO" ]] && rm -f -- "$TEMP_APP_INFO"
   [[ -n "$TEMP_WATCH_INFO" && -f "$TEMP_WATCH_INFO" ]] && rm -f -- "$TEMP_WATCH_INFO"
@@ -40,9 +58,26 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+SDK26_COMPAT="${SDK26_COMPAT:-1}"
+# Icon Composer 的两个 .icon 包是 Xcode 27 的格式，Xcode 26 的 actool 打开即崩。
+# 默认跟随 SDK26_COMPAT：置 1 时改用 Assets.xcassets 里的经典 AppIcon.appiconset。
+ICON_COMPAT="${ICON_COMPAT:-$SDK26_COMPAT}"
+
 rm -rf "$DERIVED_DATA" "$STAGING"
 rm -f "$IPA_PATH"
 mkdir -p "$BUILD"
+
+# 上次被强杀时图标可能还留在 stash 里，先自愈再继续，避免 mv 嵌套丢图标。
+if [[ -d "$BUILD/icon-stash" ]]; then
+  for leftover in "$BUILD/icon-stash"/*.icon; do
+    [[ -d "$leftover" ]] || continue
+    icon_target="$ROOT/MeloX/$(basename "$leftover")"
+    if [[ ! -e "$icon_target" ]]; then
+      mv "$leftover" "$icon_target"
+      echo "restored leftover icon / 已还原残留图标：$(basename "$leftover")"
+    fi
+  done
+fi
 
 TEMP_PROJECT="$ROOT/.MeloX-QQ-Build-$$.xcodeproj"
 TEMP_APP_INFO="$BUILD/MeloX-QQ-Info-$$.plist"
@@ -54,6 +89,18 @@ if [[ -e "$TEMP_PROJECT" || -e "$TEMP_APP_INFO" || -e "$TEMP_WATCH_INFO" ]]; the
 fi
 
 echo "========== Prepare temporary project / 准备临时工程 =========="
+
+if [[ "$ICON_COMPAT" == "1" ]]; then
+  ICON_STASH="$BUILD/icon-stash"
+  for icon in "$ROOT/MeloX/AppIcon.icon" "$ROOT/MeloX/AppIconClassic.icon"; do
+    if [[ -d "$icon" ]]; then
+      mkdir -p "$ICON_STASH"
+      mv "$icon" "$ICON_STASH/$(basename "$icon")"
+      ICON_MOVED+=("$icon|$ICON_STASH/$(basename "$icon")")
+      echo "  icon excluded (Xcode 26 actool can not read .icon) / 已排除：$(basename "$icon")"
+    fi
+  done
+fi
 
 ditto --norsrc "$PROJECT" "$TEMP_PROJECT"
 ditto --norsrc "$ROOT/MeloX/Info.plist" "$TEMP_APP_INFO"
@@ -67,11 +114,19 @@ find "$TEMP_PROJECT" -name '*.xcscheme' -type f -exec \
 
 # QQ 版使用独立 bundle id，避免与网易云原版共存时互相覆盖数据。
 # 替换顺序很重要：先长后缀（legacy 变体），再通用前缀。
+PBX_SED_ARGS=()
+if [[ "$ICON_COMPAT" == "1" ]]; then
+  # alternate icon 的唯一来源是 AppIconClassic.icon，被排除后 asset catalog 里
+  # 没有同名 appiconset，留着这行会让 actool 报找不到 AppIconClassic。
+  PBX_SED_ARGS+=(-e '/ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconClassic;/d')
+fi
+
 sed -i '' \
   -e 's/com\.aritxonly\.legacy\.MeloX/com.aritxonly.qqmusic.MeloX/g' \
   -e 's/com\.aritxonly\.MeloX/com.aritxonly.qqmusic.MeloX/g' \
   -e "s#INFOPLIST_FILE = MeloX/Info.plist;#INFOPLIST_FILE = \"$TEMP_APP_INFO\";#g" \
   -e "s#INFOPLIST_FILE = MeloXWatch/Info.plist;#INFOPLIST_FILE = \"$TEMP_WATCH_INFO\";#g" \
+  ${PBX_SED_ARGS[@]+"${PBX_SED_ARGS[@]}"} \
   "$TEMP_PROJECT/project.pbxproj"
 
 # App 显示名与 Watch 配套 bundle id。
