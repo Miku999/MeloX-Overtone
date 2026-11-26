@@ -575,12 +575,17 @@ struct ContentView: View {
 extension View {
     @ViewBuilder
     func visibleDetailNavigationBar() -> some View {
+        #if MELOX_NO_IOS27
+        // iOS 26 SDK 没有 toolbarMinimizationBehavior / toolbarMinimizationRestoration。
+        toolbarVisibility(.visible, for: .navigationBar)
+        #else
         if #available(iOS 27, *) {
             toolbarMinimizationBehavior(.never, for: .navigationBar)
                 .toolbarVisibility(.visible, for: .navigationBar)
         } else {
             toolbarVisibility(.visible, for: .navigationBar)
         }
+        #endif
     }
 }
 
@@ -588,6 +593,15 @@ private struct TabRootNavigationBar: ViewModifier {
     @State private var atTop = true
 
     func body(content: Content) -> some View {
+        #if MELOX_NO_IOS27
+        content
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.contentOffset.y + $0.contentInsets.top <= 0.5
+            } action: { _, value in
+                atTop = value
+            }
+            .toolbarVisibility(atTop ? .visible : .hidden, for: .navigationBar)
+        #else
         if #available(iOS 27, *) {
             content
                 .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
@@ -601,5 +615,6 @@ private struct TabRootNavigationBar: ViewModifier {
                 }
                 .toolbarVisibility(atTop ? .visible : .hidden, for: .navigationBar)
         }
+        #endif
     }
 }
