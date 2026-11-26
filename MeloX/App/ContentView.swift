@@ -600,17 +600,17 @@ extension View {
 }
 
 private struct TabRootNavigationBar: ViewModifier {
-    @State private var atTop = true
-
     func body(content: Content) -> some View {
         #if MELOX_NO_IOS27
+        // 导航栏最小化只做原生实现。
+        //
+        // iOS 26 上没有 `toolbarMinimizationBehavior`，曾经用
+        // `onScrollGeometryChange` + `toolbarVisibility(atTop ? .visible : .hidden)`
+        // 模拟，结果是一个反馈回路：隐藏/显示导航栏会改变内容区的 safe area inset，
+        // inset 变化又让 `contentOffset.y + contentInsets.top` 在 0 附近来回跳，
+        // 于是每帧都在切 toolbar 可见性 → 布局重排 → 再次触发 …… 主线程被占满，
+        // 表现就是「滚到列表最顶部直接卡死」。这里不做任何隐藏，滚动更稳。
         content
-            .onScrollGeometryChange(for: Bool.self) {
-                $0.contentOffset.y + $0.contentInsets.top <= 0.5
-            } action: { _, value in
-                atTop = value
-            }
-            .toolbarVisibility(atTop ? .visible : .hidden, for: .navigationBar)
         #else
         if #available(iOS 27, *) {
             content
@@ -618,12 +618,6 @@ private struct TabRootNavigationBar: ViewModifier {
                 .toolbarMinimizationRestoration(.atScrollEdge, for: .navigationBar)
         } else {
             content
-                .onScrollGeometryChange(for: Bool.self) {
-                    $0.contentOffset.y + $0.contentInsets.top <= 0.5
-                } action: { _, value in
-                    atTop = value
-                }
-                .toolbarVisibility(atTop ? .visible : .hidden, for: .navigationBar)
         }
         #endif
     }
