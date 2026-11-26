@@ -1,5 +1,5 @@
-"ui.app.name" = "弦外";
-"ui.app.name_version" = "弦外 %@";
+"ui.app.name" = "弦外 QQ";
+"ui.app.name_version" = "弦外 QQ %@";
 
 "ui.settings.language.section" = "语言";
 "ui.settings.language.picker" = "语言";
@@ -41,7 +41,7 @@
 "ui.settings.navigation.page.subscribed_podcasts" = "播客（收藏）";
 "ui.settings.navigation.placement.tab_bar" = "底部标签栏";
 
-"ui.settings.content_feature.cloud.detail" = "网易云音乐云盘入口与云盘内容";
+"ui.settings.content_feature.cloud.detail" = "QQ 音乐云盘入口与云盘内容";
 "ui.settings.content_feature.cloud.title" = "音乐云盘";
 "ui.settings.content_feature.downloads.detail" = "本地下载入口与下载资料库";
 "ui.settings.content_feature.history.detail" = "本机及账号播放记录入口";
@@ -94,7 +94,7 @@
 "ui.lyrics.source.amll" = "AMLL";
 "ui.lyrics.source.amll_ttml" = "AMLL TTML";
 "ui.lyrics.source.automatic" = "自动优选";
-"ui.lyrics.source.netease" = "网易云音乐";
+"ui.lyrics.source.netease" = "QQ 音乐";
 "ui.lyrics.source.qq_music" = "QQ 音乐";
 "ui.error.lyrics.invalid_response" = "歌词服务返回了无法识别的数据。";
 "ui.error.lyrics.unavailable" = "当前歌曲暂无滚动歌词。";
@@ -165,9 +165,9 @@
 "ui.common.supported" = "支持";
 "ui.common.unsupported" = "不支持";
 
-"ui.service.netease" = "网易云音乐";
-"ui.metadata.netease_host" = "网易云主播";
-"ui.metadata.netease_user" = "网易云用户";
+"ui.service.netease" = "QQ 音乐";
+"ui.metadata.netease_host" = "QQ 主播";
+"ui.metadata.netease_user" = "QQ 用户";
 "ui.metadata.unknown_album" = "未知专辑";
 "ui.metadata.unknown_artist" = "未知艺术家";
 "ui.metadata.unknown_playlist" = "未知播放列表";
@@ -191,32 +191,32 @@
 "ui.podcast.sort.newest" = "最新优先";
 "ui.podcast.sort.oldest" = "最早优先";
 
-"ui.error.api.request_encoding" = "无法生成网易云音乐请求。";
+"ui.error.api.request_encoding" = "无法生成 QQ 音乐请求。";
 "ui.error.api.invalid_response" = "音乐服务返回了无法识别的数据。";
 "ui.error.api.empty_response" = "音乐服务返回了空响应（%ld）。";
 "ui.error.api.server" = "请求失败（%ld）：%@";
 "ui.error.api.no_playable_source" = "当前歌曲可能因版权或地区限制，没有可用的播放地址。";
-"ui.error.api.login_required" = "请先登录网易云音乐。";
-"ui.error.api.operation_incomplete" = "网易云音乐未完成操作。";
+"ui.error.api.login_required" = "请先登录 QQ 音乐。";
+"ui.error.api.operation_incomplete" = "QQ 音乐未完成操作。";
 "ui.error.api.decode_with_hex" = "数据解析失败（%ld 字节，%@）：%@";
 "ui.error.api.decode" = "数据解析失败（%ld 字节）：%@；%@";
 "ui.error.update.no_release" = "当前仓库还没有发布版本。";
 "ui.error.update.invalid_release" = "发布信息格式不完整。";
-"ui.error.heart_mode.no_playable_song" = "网易云音乐暂时没有返回可播放的心动模式歌曲。";
+"ui.error.heart_mode.no_playable_song" = "QQ 音乐暂时没有返回可播放的心动模式歌曲。";
 "ui.error.home.load_failed" = "无法载入主页推荐。";
 "ui.error.private_radio.start_failed" = "无法开始私人漫游。";
 "ui.error.song_wiki.load_failed" = "无法载入歌曲百科。";
 "ui.error.decode.string_or_numeric_id" = "预期字符串或数字标识符。";
 "ui.error.decode.integer" = "预期整数或整数字符串。";
 "ui.error.share.recipient_required" = "请至少选择一位收件人。";
-"ui.error.share.unsupported_timeline_resource" = "网易云音乐暂不支持将此类型的内容转发到动态。";
+"ui.error.share.unsupported_timeline_resource" = "QQ 音乐暂不支持将此类型的内容转发到动态。";
 
 "ui.cloud.storage_usage" = "已使用 %@，共 %@";
 "ui.error.cloud.upload_failed" = "上传失败：%@";
 "ui.error.cloud.delete_failed" = "删除失败：%@";
 "ui.error.cloud.read_file_failed" = "无法读取所选文件：%@";
 "ui.error.cloud.invalid_audio_file" = "所选文件不是可上传的音频文件。";
-"ui.error.cloud.no_upload_server" = "网易云音乐暂时没有返回可用的上传服务器。";
+"ui.error.cloud.no_upload_server" = "QQ 音乐暂时没有返回可用的上传服务器。";
 "ui.error.download.invalid_response" = "歌曲下载服务返回了无效响应。";
 "ui.error.download.empty_file" = "下载完成的歌曲文件为空。";
 "ui.error.download.database_unavailable" = "下载数据库不可用。";
@@ -259,21 +259,21 @@
 "ui.listen_together.operation.joining" = "正在加入";
 "ui.listen_together.operation.leaving" = "正在退出";
 "ui.listen_together.notice.room_ended" = "一起听房间已结束。";
-"ui.listen_together.notice.account_moved" = "网易云账号已进入另一个一起听房间。";
+"ui.listen_together.notice.account_moved" = "QQ 账号已进入另一个一起听房间。";
 "ui.error.listen_together.invitation_empty" = "请粘贴一起听邀请链接。";
 "ui.error.listen_together.missing_room_id" = "邀请链接中缺少房间 ID。";
 "ui.error.listen_together.missing_inviter_id" = "邀请链接中缺少邀请者 ID。";
 "ui.error.listen_together.song_required" = "请先播放一首歌曲，再发起一起听。";
 "ui.error.listen_together.room_full" = "一起听房间人数已满。";
 "ui.error.listen_together.room_unavailable" = "该一起听房间当前无法加入。";
-"ui.error.listen_together.missing_room" = "网易云音乐没有返回有效的一起听房间。";
-"ui.error.listen_together.missing_account" = "无法读取当前网易云账号，请重新登录后再试。";
+"ui.error.listen_together.missing_room" = "QQ 音乐没有返回有效的一起听房间。";
+"ui.error.listen_together.missing_account" = "无法读取当前 QQ 账号，请重新登录后再试。";
 "ui.error.listen_together.invalid_playback_state" = "一起听房间暂时没有可同步的播放内容。";
 "ui.error.listen_together.initial_sync_failed" = "房间已创建，但首次同步失败：%@";
 "ui.error.listen_together.waiting_for_playback" = "已加入房间，正在等待播放状态：%@";
-"ui.error.listen_together.leave_failed" = "已停止本机同步，但网易云房间退出请求失败：%@";
-"ui.error.listen_together.end_failed" = "网易云音乐未能结束一起听房间。";
-"ui.error.listen_together.operation_incomplete" = "网易云音乐未完成一起听操作。";
+"ui.error.listen_together.leave_failed" = "已停止本机同步，但 QQ 房间退出请求失败：%@";
+"ui.error.listen_together.end_failed" = "QQ 音乐未能结束一起听房间。";
+"ui.error.listen_together.operation_incomplete" = "QQ 音乐未完成一起听操作。";
 
 "ui.lyrics.format.token.lyrics" = "{歌词}";
 "ui.lyrics.format.token.title" = "{歌名}";
@@ -363,7 +363,7 @@
 "ui.settings.catalog.developer.title" = "开发者选项";
 "ui.settings.catalog.developer.subtitle" = "BeatNet 分析与播放器调试工具";
 "ui.settings.catalog.developer.keywords" = "BeatNet|节拍|重拍|Onset|调试|Core ML|全曲分析";
-"ui.settings.catalog.account.keywords" = "网易云账号|登录|退出登录|Cookie|个人主页|用户 ID";
+"ui.settings.catalog.account.keywords" = "QQ 账号|登录|退出登录|Cookie|个人主页|用户 ID";
 "ui.settings.catalog.reset.keywords" = "恢复播放器默认设置|重置|还原|播放器|歌词|均衡器|自动混音";
 
 "ui.settings.general.theme.picker" = "主题";
@@ -374,23 +374,23 @@
 "ui.settings.general.launch_navigation.section" = "启动与导航";
 "ui.settings.general.launch_navigation.restore.footer" = "下次启动时会回到最后使用的主页面。关闭后，将打开所选的默认启动页面。";
 "ui.settings.general.launch_navigation.default.footer" = "默认启动页面会在下次启动弦外时生效。";
-"ui.settings.general.clipboard_recognition" = "识别剪贴板中的网易云链接";
+"ui.settings.general.clipboard_recognition" = "识别剪贴板中的 QQ 链接";
 "ui.settings.general.clipboard.section" = "剪贴板";
-"ui.settings.general.clipboard.footer" = "开启后，弦外会在每次启动时读取一次剪贴板；识别到网易云歌曲或一起听链接时，会先询问是否打开。系统可能显示粘贴权限提示。";
+"ui.settings.general.clipboard.footer" = "开启后，弦外会在每次启动时读取一次剪贴板；识别到 QQ 歌曲或一起听链接时，会先询问是否打开。系统可能显示粘贴权限提示。";
 "ui.settings.general.library.restore_last_page" = "记住上次音乐库页面";
 "ui.settings.general.library.default_page" = "默认打开页面";
 "ui.settings.general.library.restore.footer" = "重新启动后，音乐库会恢复到最后浏览的内置页面。";
 "ui.settings.general.library.default.footer" = "每次启动弦外后首次打开音乐库时，会显示所选页面。";
 
 "ui.settings.account.cookie.footer" = "登录 Cookie 仅保存在本机，用于同步收藏、云盘和账号内容。";
-"ui.settings.account.logout.confirmation" = "退出当前网易云账号？";
+"ui.settings.account.logout.confirmation" = "退出当前 QQ 账号？";
 "ui.settings.account.logout" = "退出登录";
-"ui.settings.account.logout.message.downloads" = "本机保存的网易云登录 Cookie 和已加载的账号数据将被清除，已下载歌曲不会被删除。";
-"ui.settings.account.logout.message" = "本机保存的网易云登录 Cookie 和已加载的账号数据将被清除。";
+"ui.settings.account.logout.message.downloads" = "本机保存的 QQ 登录 Cookie 和已加载的账号数据将被清除，已下载歌曲不会被删除。";
+"ui.settings.account.logout.message" = "本机保存的 QQ 登录 Cookie 和已加载的账号数据将被清除。";
 "ui.settings.account.open.hint" = "打开账号信息与个人主页";
-"ui.settings.account.netease_account" = "网易云音乐账号";
+"ui.settings.account.netease_account" = "QQ 音乐账号";
 "ui.settings.account.loading" = "正在读取账号信息";
-"ui.settings.account.login" = "登录网易云音乐";
+"ui.settings.account.login" = "登录 QQ 音乐";
 "ui.settings.account.login.subtitle" = "同步收藏、云盘与播放记录";
 "ui.settings.account.subtitle.level" = "Lv.%ld · 用户 ID %ld";
 "ui.settings.account.subtitle" = "用户 ID %ld · 账号信息与同步";
@@ -502,7 +502,7 @@
 "ui.settings.live_activity.expanded.section" = "展开与锁定屏幕";
 "ui.settings.live_activity.title" = "实时活动歌词";
 
-"ui.about.tagline" = "第三方网易云音乐播放器";
+"ui.about.tagline" = "第三方 QQ 音乐播放器";
 "ui.about.app_info.section" = "应用信息";
 "ui.about.version" = "版本";
 "ui.about.build" = "构建版本";
@@ -513,7 +513,7 @@
 "ui.about.updates.section" = "更新";
 "ui.about.updates.footer" = "自动检查只会在发现新版本时提示，检查失败不会打断应用启动。";
 "ui.about.melox.section" = "关于弦外";
-"ui.about.description" = "弦外使用原生 SwiftUI 构建，专注于网易云音乐播放与歌词体验。";
+"ui.about.description" = "弦外使用原生 SwiftUI 构建，专注于 QQ 音乐播放与歌词体验。";
 "ui.about.shareholders.section" = "股东";
 "ui.about.community.section" = "项目与社区";
 "ui.about.website" = "上游 MeloX 官网";
@@ -525,7 +525,7 @@
 "ui.about.open_source.section" = "开源与许可";
 "ui.about.open_source.footer" = "查看 MeloX、参考项目、音频指纹运行时、内置资源和 PV Tool 的许可与归属说明。";
 "ui.about.disclaimer.section" = "声明";
-"ui.about.disclaimer" = "弦外是非官方第三方客户端，与网易云音乐及其关联公司不存在隶属或授权关系。";
+"ui.about.disclaimer" = "弦外是非官方第三方客户端，与 QQ 音乐及其关联公司不存在隶属或授权关系。";
 "ui.about.open_release_page" = "打开发布页";
 "ui.about.update_available.title" = "发现新版本";
 "ui.about.update_available.message" = "当前版本 %@，最新版本 %@。可以前往发布页查看更新内容。";
@@ -592,7 +592,7 @@
 "ui.settings.playback.remember_page" = "记住播放器页面";
 "ui.settings.playback.previous_restarts" = "上一首优先回到歌曲开头";
 "ui.settings.playback.section.behavior" = "播放行为";
-"ui.settings.playback.behavior.footer" = "自动心动模式需要登录网易云音乐；开启后会在下次启动时载入“我喜欢的音乐”并开始播放。页面记忆会恢复上次停留的封面、歌词或队列。开启“上一首优先回到歌曲开头”后，播放超过 5 秒会先回到本曲开头。";
+"ui.settings.playback.behavior.footer" = "自动心动模式需要登录 QQ 音乐；开启后会在下次启动时载入“我喜欢的音乐”并开始播放。页面记忆会恢复上次停留的封面、歌词或队列。开启“上一首优先回到歌曲开头”后，播放超过 5 秒会先回到本曲开头。";
 "ui.settings.automix.title" = "自动混音";
 "ui.settings.automix.enabled" = "自动混音";
 "ui.settings.automix.transition_mode" = "过渡方式";
@@ -760,7 +760,7 @@
 "ui.settings.lyrics.content.romanization_display_range" = "罗马音显示范围";
 "ui.settings.lyrics.content.translation_display_range" = "翻译显示范围";
 "ui.settings.lyrics.content.section.translation_pronunciation" = "翻译与发音";
-"ui.settings.lyrics.content.translation.footer" = "使用网易云提供的 yromalrc/romalrc 与 ytlrc/tlyric。Apple Music 样式将罗马音作为主歌词下方、按原词位置对齐的副行；翻译位于下一层，保持静态整行显示。";
+"ui.settings.lyrics.content.translation.footer" = "使用 QQ 提供的 yromalrc/romalrc 与 ytlrc/tlyric。Apple Music 样式将罗马音作为主歌词下方、按原词位置对齐的副行；翻译位于下一层，保持静态整行显示。";
 "ui.settings.lyrics.content.romanization_size" = "罗马音大小";
 "ui.settings.lyrics.content.romanization_brightness" = "罗马音亮度";
 "ui.settings.lyrics.content.section.romanization_style" = "罗马音样式";
@@ -771,7 +771,7 @@
 "ui.settings.lyrics.content.amll_source" = "AMLL TTML 歌词";
 "ui.settings.lyrics.content.qq_source" = "QQ 音乐歌词补全";
 "ui.settings.lyrics.content.section.source" = "歌词来源";
-"ui.settings.lyrics.content.source.footer" = "自动优选会先加载并显示网易云歌词，等待 AMLL 与 QQ 音乐返回后再按 AMLL TTML、网易云 YRC、QQ QRC、网易云 LRC、QQ LRC 的顺序统一优选。手动选择某个来源后，将仅使用该来源；也可以随时在播放器菜单中切换。";
+"ui.settings.lyrics.content.source.footer" = "自动优选会先加载并显示 QQ 歌词，等待 AMLL 与 QQ 音乐返回后再按 AMLL TTML、QQ YRC、QQ QRC、QQ LRC、QQ LRC 的顺序统一优选。手动选择某个来源后，将仅使用该来源；也可以随时在播放器菜单中切换。";
 "ui.settings.lyrics.content.duet_layout" = "双人歌词分列显示";
 "ui.settings.lyrics.content.section.performer_layout" = "演唱者布局";
 "ui.settings.lyrics.content.duet_layout.footer" = "根据歌词中的演唱者标记，将不同演唱者分别靠左、靠右显示；合唱保持靠左。";
@@ -871,7 +871,7 @@
 "ui.settings.storage.delete_all_downloads" = "删除所有下载";
 "ui.settings.storage.delete_all_downloads.subtitle" = "同时取消正在进行的下载任务";
 "ui.settings.storage.section.destructive" = "危险操作";
-"ui.settings.storage.destructive.footer" = "删除的歌曲文件无法恢复，但不会影响网易云音乐中的收藏和播放列表。";
+"ui.settings.storage.destructive.footer" = "删除的歌曲文件无法恢复，但不会影响 QQ 音乐中的收藏和播放列表。";
 "ui.settings.storage.operation.cleared_approximately" = "已清理约 %@";
 "ui.settings.storage.operation.cleared_network_cache" = "已清理 %@ 网络与图片缓存";
 "ui.settings.storage.operation.cleared_temporary_files" = "已清理 %@ 临时文件";
@@ -914,7 +914,7 @@
 "ui.error.floating_lyrics.title" = "无法打开悬浮歌词";
 "ui.error.picture_in_picture.unavailable" = "系统画中画暂时不可用。";
 "ui.messages.private.title" = "私信";
-"ui.messages.private.open_hint" = "打开网易云私信";
+"ui.messages.private.open_hint" = "打开 QQ 私信";
 "ui.recognition.title" = "听歌识曲";
 "ui.recognition.source" = "音频来源";
 "ui.recognition.source.microphone" = "麦克风";
@@ -942,28 +942,28 @@
 "ui.update.available.title" = "发现新版本";
 "ui.update.open_release_page" = "打开发布页";
 "ui.update.available.message" = "当前版本 %@，最新版本 %@。可以前往发布页查看更新内容。";
-"ui.clipboard.error.song_not_found" = "网易云音乐没有返回这首歌曲的信息。";
+"ui.clipboard.error.song_not_found" = "QQ 音乐没有返回这首歌曲的信息。";
 "ui.clipboard.title" = "剪贴板链接";
 "ui.clipboard.open_link_prompt" = "是否在弦外中打开此链接？";
 "ui.clipboard.error.title" = "无法打开剪贴板链接";
 "ui.clipboard.opening_song" = "正在打开歌曲…";
 "ui.clipboard.opening_song_accessibility" = "正在打开剪贴板中的歌曲";
-"ui.clipboard.song_link_found" = "发现网易云歌曲链接";
+"ui.clipboard.song_link_found" = "发现 QQ 歌曲链接";
 "ui.clipboard.listen_together_found" = "发现一起听邀请";
 "ui.clipboard.song_prompt" = "是否在弦外中打开剪贴板里的歌曲？";
 "ui.clipboard.listen_together_prompt" = "是否查看剪贴板里的一起听邀请？加入前仍可核对邀请链接。";
 "ui.clipboard.open_song" = "打开歌曲";
 "ui.clipboard.view_invitation" = "查看邀请";
-"ui.onboarding.welcome.subtitle" = "用原生方式发现、播放和收藏网易云音乐。";
-"ui.legal.unofficial_disclaimer" = "弦外是非官方第三方客户端，与网易云音乐及其关联公司不存在隶属、合作或授权关系。";
+"ui.onboarding.welcome.subtitle" = "用原生方式发现、播放和收藏 QQ 音乐。";
+"ui.legal.unofficial_disclaimer" = "弦外是非官方第三方客户端，与 QQ 音乐及其关联公司不存在隶属、合作或授权关系。";
 "ui.legal.projects_licenses.title" = "项目与许可";
 "ui.onboarding.account.logged_in_message" = "你的收藏歌曲、播放列表和播放历史会显示在音乐库中。";
 "ui.onboarding.start" = "开始使用弦外";
-"ui.account.login_netease" = "登录网易云音乐";
-"ui.service.netease_cloud_music" = "网易云音乐";
-"ui.account.netease_account" = "网易云音乐账号";
+"ui.account.login_netease" = "登录 QQ 音乐";
+"ui.service.netease_cloud_music" = "QQ 音乐";
+"ui.account.netease_account" = "QQ 音乐账号";
 "ui.account.logged_in" = "已登录";
-"ui.onboarding.account.connect" = "连接网易云音乐";
+"ui.onboarding.account.connect" = "连接 QQ 音乐";
 "ui.onboarding.account.connect_message" = "登录后可以同步个人音乐库并使用账号相关功能。登录并不是开始使用弦外的必要条件。";
 "ui.onboarding.benefit.sync_library" = "同步收藏歌曲、播放列表和播放历史";
 "ui.onboarding.benefit.personalized_content" = "访问每日推荐等账号专属内容";
@@ -996,8 +996,8 @@
 "ui.legal.section.licenses" = "许可证";
 "ui.legal.netease_audio_fingerprint" = "@neteaseapireborn/api 音频指纹";
 "ui.legal.reference.better_lyrics" = "逐字歌词渲染、光效与动效参考";
-"ui.legal.reference.lyricify" = "网易云 YRC 逐字歌词解析参考";
-"ui.legal.reference.yesplaymusic" = "网易云接口与播放器实现参考";
+"ui.legal.reference.lyricify" = "QQ YRC 逐字歌词解析参考";
+"ui.legal.reference.yesplaymusic" = "QQ 接口与播放器实现参考";
 "ui.legal.reference.netease_api" = "听歌识曲路由与音频指纹运行时";
 "ui.legal.reference.pv_tool" = "文字 PV 模板与效果的原始实现";
 "ui.legal.reference.beatnet" = "自动混音的节拍、重拍与速度分析模型";
@@ -1011,7 +1011,7 @@
 "ui.legal.document.source_han_serif.title" = "思源宋体许可证";
 "ui.legal.document.beatnet.title" = "BeatNet 模型许可";
 "ui.legal.document.melox.fallback" = "MeloX 应用主体以 GNU General Public License version 3 发布。复制、修改或分发时，应保留版权与许可声明，并遵守 GPLv3 的源代码提供及同许可证分发要求。第三方代码和资源的单独许可证仍然有效。";
-"ui.legal.document.yesplaymusic.fallback" = "MeloX 的网易云接口和播放器实现参考了 qier222/YesPlayMusic。YesPlayMusic 以 MIT License 发布，Copyright © 2020–2023 qier222；使用其软件或重要部分时需保留原版权和许可声明。";
+"ui.legal.document.yesplaymusic.fallback" = "MeloX 的 QQ 接口和播放器实现参考了 qier222/YesPlayMusic。YesPlayMusic 以 MIT License 发布，Copyright © 2020–2023 qier222；使用其软件或重要部分时需保留原版权和许可声明。";
 "ui.legal.document.source_han_serif.fallback" = "思源宋体使用 SIL Open Font License 1.1。完整许可证随应用资源一同提供。";
 "ui.legal.document.beatnet.fallback" = "MeloX 使用 Mojtaba Heydari 的 BeatNet 通用模型，并将其转换为 Core ML 格式。模型以 Creative Commons Attribution 4.0 International（CC BY 4.0）许可。";
 "ui.legal.document.pv_tool.fallback" = "PV Tool 使用 Non-Commercial License。未经作者书面许可，不得用于商业产品、付费服务或其他商业场景。商业使用需要联系原作者取得单独授权。";
@@ -1061,7 +1061,7 @@
 "ui.search.popular_recommendations" = "热门推荐";
 "ui.search.loading_recommendations" = "正在载入推荐";
 "ui.search.recommendations_failed" = "推荐载入失败";
-"ui.search.prompt" = "音乐内容或网易云链接";
+"ui.search.prompt" = "音乐内容或 QQ 链接";
 "ui.search.failed" = "搜索失败";
 "ui.search.link_failed" = "无法打开链接";
 "ui.error.favorite_failed" = "收藏失败";
@@ -1069,7 +1069,7 @@
 "ui.search.reading_song_link" = "正在读取歌曲链接";
 "ui.search.section.linked_song" = "链接中的歌曲";
 "ui.listen_together.invitation" = "一起听邀请";
-"ui.search.listen_together_link_recognized" = "已识别网易云音乐一起听分享链接。";
+"ui.search.listen_together_link_recognized" = "已识别 QQ 音乐一起听分享链接。";
 "ui.toplists.title" = "排行榜";
 "ui.toplists.loading" = "正在载入排行榜";
 "ui.toplists.empty" = "暂无榜单";
@@ -1086,12 +1086,12 @@
 "ui.home.no_recommendations" = "暂无推荐";
 "ui.home.no_personalized_recommendations" = "暂无个性化推荐";
 "ui.home.pull_to_refresh" = "下拉刷新后再试一次。";
-"ui.home.login_for_personalized_content" = "登录网易云音乐后可查看完整的个性化内容。";
+"ui.home.login_for_personalized_content" = "登录 QQ 音乐后可查看完整的个性化内容。";
 "ui.home.error.no_private_radar" = "当前推荐中没有可用的私人雷达播放列表。";
-"ui.home.error.login_required" = "请先登录网易云音乐。";
+"ui.home.error.login_required" = "请先登录 QQ 音乐。";
 "ui.home.error.liked_songs_required" = "收藏一些喜欢的歌曲后即可使用心动模式。";
 "ui.home.error.current_song_required" = "请先播放一首歌曲，再查找相似歌曲。";
-"ui.home.error.no_playable_recommendations" = "网易云音乐暂时没有返回可播放的推荐歌曲。";
+"ui.home.error.no_playable_recommendations" = "QQ 音乐暂时没有返回可播放的推荐歌曲。";
 "ui.home.section.recommended_playlists" = "推荐播放列表";
 "ui.home.section.recently_trending" = "近期云村热播";
 "ui.home.section.tailored" = "根据你的喜好为你推荐";
@@ -1162,7 +1162,7 @@
 "ui.library.searching_all_favorite_songs" = "正在搜索全部收藏歌曲";
 "ui.library.search_again" = "重新搜索";
 "ui.library.no_favorite_songs" = "还没有收藏歌曲";
-"ui.library.no_favorite_songs.message" = "在歌曲列表左滑即可收藏到网易云音乐。";
+"ui.library.no_favorite_songs.message" = "在歌曲列表左滑即可收藏到 QQ 音乐。";
 "ui.library.section.mine" = "我的";
 "ui.library.my_listening_rank" = "我的听歌排行";
 "ui.library.my_listening_rank.hint" = "查看最近一周或所有时间的听歌排行";
@@ -1182,7 +1182,7 @@
 "ui.library.no_subscribed_podcasts.message" = "打开播客详情后，轻点订阅按钮。";
 "ui.library.searching_all_subscribed_podcasts" = "正在搜索全部订阅播客";
 "ui.library.no_history" = "还没有播放记录";
-"ui.library.no_history.message" = "网易云音乐中的最近播放会显示在这里。";
+"ui.library.no_history.message" = "QQ 音乐中的最近播放会显示在这里。";
 "ui.library.error.playlists" = "播放列表：%@";
 "ui.library.error.favorite_albums" = "收藏专辑：%@";
 "ui.library.error.subscribed_podcasts" = "订阅播客：%@";
@@ -1228,7 +1228,7 @@
 "ui.downloads.select_quality" = "选择下载音质";
 "ui.playlists.add_to" = "添加到播放列表";
 "ui.playlists.add_failed" = "添加失败";
-"ui.playlists.login_to_add" = "登录网易云音乐后，才能把歌曲添加到自己的播放列表。";
+"ui.playlists.login_to_add" = "登录 QQ 音乐后，才能把歌曲添加到自己的播放列表。";
 "ui.playlists.loading" = "正在读取播放列表";
 "ui.playlists.none_available" = "没有可选播放列表";
 "ui.playlists.create_first" = "新建一个播放列表，然后添加歌曲。";
@@ -1518,14 +1518,14 @@
 "ui.cloud.uploading_music" = "正在上传音乐";
 "ui.cloud.delete.confirmation" = "从音乐云盘删除？";
 "ui.cloud.delete_named" = "删除“%@”";
-"ui.cloud.delete.message" = "此操作会同时从网易云音乐账号中删除该云盘歌曲。";
+"ui.cloud.delete.message" = "此操作会同时从 QQ 音乐账号中删除该云盘歌曲。";
 "ui.cloud.error.title" = "音乐云盘操作失败";
 "ui.cloud.loading" = "正在读取音乐云盘";
 "ui.cloud.uploading_foreground" = "正在上传音乐，请保持弦外在前台";
 "ui.cloud.total_song_count" = "共 %ld 首歌曲";
 "ui.cloud.delete" = "从云盘删除";
 "ui.cloud.empty" = "音乐云盘是空的";
-"ui.cloud.empty.message" = "上传本地音频后，可在所有网易云音乐客户端中播放。";
+"ui.cloud.empty.message" = "上传本地音频后，可在所有 QQ 音乐客户端中播放。";
 "ui.cloud.searching_all" = "正在搜索全部云盘歌曲";
 "ui.downloads.automatic_cache" = "按播放次数自动缓存";
 "ui.downloads.trigger_count" = "触发次数";
@@ -1541,7 +1541,7 @@
 "ui.recognition.preparing_microphone" = "正在准备麦克风";
 "ui.recognition.microphone_permission_message" = "首次使用时，请允许弦外访问麦克风。";
 "ui.recognition.matching" = "正在识别";
-"ui.recognition.matching_message" = "正在生成音频指纹并查询网易云音乐曲库。";
+"ui.recognition.matching_message" = "正在生成音频指纹并查询 QQ 音乐曲库。";
 "ui.recognition.restart" = "重新识别";
 "ui.recognition.start" = "开始识别";
 "ui.recognition.listening" = "正在聆听";
@@ -1555,8 +1555,8 @@
 "ui.recognition.no_match_message" = "请靠近声源、减少环境噪声，或在设置中延长时长、选择持续识别后重试。";
 "ui.recognition.try_again" = "再试一次";
 "ui.recognition.failed" = "无法完成识别";
-"ui.recognition.ready.continuous" = "将 iPhone 靠近正在播放的音乐。弦外会持续聆听并不断展示识别结果，直到你手动停止。只会向网易云音乐发送设备端生成的音频指纹。";
-"ui.recognition.ready.limited" = "将 iPhone 靠近正在播放的音乐。弦外最长会聆听 %@，识别到结果后立即停止，并只向网易云音乐发送设备端生成的音频指纹。";
+"ui.recognition.ready.continuous" = "将 iPhone 靠近正在播放的音乐。弦外会持续聆听并不断展示识别结果，直到你手动停止。只会向 QQ 音乐发送设备端生成的音频指纹。";
+"ui.recognition.ready.limited" = "将 iPhone 靠近正在播放的音乐。弦外最长会聆听 %@，识别到结果后立即停止，并只向 QQ 音乐发送设备端生成的音频指纹。";
 "ui.recognition.error.microphone_permission" = "没有麦克风权限。请在系统设置中允许弦外使用麦克风。";
 "ui.recognition.error.microphone_unavailable" = "当前没有可用的麦克风输入。";
 "ui.recognition.error.recording_failed" = "无法开始录音：%@";
@@ -1599,7 +1599,7 @@
 "ui.podcasts.search_prompt" = "在播客节目中搜索";
 "ui.podcasts.episode_order" = "节目顺序";
 "ui.podcasts.subscription_failed" = "无法更新订阅";
-"ui.podcasts.login_to_subscribe" = "请先登录网易云音乐后再订阅播客。";
+"ui.podcasts.login_to_subscribe" = "请先登录 QQ 音乐后再订阅播客。";
 "ui.podcasts.from" = "来自";
 "ui.podcasts.episode_information" = "节目信息";
 "ui.podcasts.episode_description" = "节目简介";
@@ -1624,11 +1624,11 @@
 "ui.common.send" = "发送";
 "ui.common.optional" = "选填";
 "ui.common.publish" = "发布";
-"ui.error.netease_operation_incomplete" = "网易云音乐未能完成此操作。";
+"ui.error.netease_operation_incomplete" = "QQ 音乐未能完成此操作。";
 "ui.messages.start_private_message" = "发起私信";
 "ui.messages.loading_private_messages" = "正在载入私信";
 "ui.messages.empty" = "暂无私信";
-"ui.messages.empty.message" = "通过网易云音乐发送的私信会显示在这里。";
+"ui.messages.empty.message" = "通过 QQ 音乐发送的私信会显示在这里。";
 "ui.messages.no_messages" = "暂无消息";
 "ui.messages.no_messages.message" = "发送一条消息开始对话。";
 "ui.messages.send_failed" = "消息发送失败";
@@ -1643,8 +1643,8 @@
 "ui.messages.selected_recipient_count" = "已选择 %ld 人";
 "ui.messages.private_send_failed" = "私信发送失败";
 "ui.messages.contacts_load_failed" = "无法载入联系人";
-"ui.sharing.netease_private_message" = "网易云私信";
-"ui.sharing.forward_to_feed" = "转发到网易云动态";
+"ui.sharing.netease_private_message" = "QQ 私信";
+"ui.sharing.forward_to_feed" = "转发到 QQ 动态";
 "ui.sharing.system_share" = "更多分享方式";
 "ui.sharing.forwarded_content" = "转发内容";
 "ui.sharing.say_something" = "说点什么";
@@ -1665,7 +1665,7 @@
 "ui.listen_together.join_room" = "加入房间";
 "ui.listen_together.invitation_requirements" = "请粘贴一起听邀请链接或房间号。";
 "ui.listen_together.login_required" = "需要登录";
-"ui.listen_together.login_message" = "登录网易云音乐后即可创建或加入房间。";
+"ui.listen_together.login_message" = "登录 QQ 音乐后即可创建或加入房间。";
 "ui.listen_together.waiting_for_playback" = "等待开始播放";
 "ui.listen_together.room_sync" = "房间同步";
 "ui.listen_together.room_members" = "房间成员";
@@ -1695,7 +1695,7 @@
 "ui.listen_together.room_ended" = "这个一起听房间已结束。";
 "ui.listen_together.members_title" = "房间成员";
 "ui.listen_together.no_shareable_song_hint" = "请先播放可分享的歌曲，再邀请朋友。";
-"ui.common.netease_cloud_music" = "网易云音乐";
+"ui.common.netease_cloud_music" = "QQ 音乐";
 "ui.song.wiki.information" = "百科资料";
 "ui.song.wiki.resource_count" = "%ld 个";
 "ui.song.wiki.first_listen" = "第一次听";
@@ -1745,7 +1745,7 @@
 "ui.desktop.mini_player" = "迷你播放器";
 "ui.common.lyrics" = "歌词";
 "ui.common.login" = "登录";
-"ui.account.not_signed_in" = "未登录网易云音乐";
+"ui.account.not_signed_in" = "未登录 QQ 音乐";
 "ui.desktop.settings.tab.general" = "通用";
 "ui.desktop.settings.tab.features" = "功能";
 "ui.desktop.settings.tab.files" = "文件";
@@ -1761,7 +1761,7 @@
 "ui.desktop.settings.account.sign_in_message" = "登录后同步完整资料库";
 "ui.desktop.settings.account.details" = "账户详情";
 "ui.desktop.settings.launch" = "启动";
-"ui.desktop.settings.launch.clipboard" = "启动时识别剪贴板中的网易云链接";
+"ui.desktop.settings.launch.clipboard" = "启动时识别剪贴板中的 QQ 链接";
 "ui.desktop.settings.quality_controls" = "音质与控制";
 "ui.desktop.settings.spatial_audio" = "空间音频";
 "ui.desktop.settings.mode" = "模式";
@@ -1785,7 +1785,7 @@
 "ui.desktop.settings.player_debug" = "播放器调试";
 "ui.desktop.settings.maintenance" = "维护";
 "ui.desktop.settings.show_onboarding_again" = "再次显示欢迎对话框";
-"ui.desktop.settings.refresh_all_content" = "刷新所有网易云内容";
+"ui.desktop.settings.refresh_all_content" = "刷新所有 QQ 内容";
 "ui.desktop.settings.privacy" = "隐私";
 "ui.desktop.settings.privacy.message" = "账户 Cookie、下载资料库和播放设置仅保存在这台 Mac。听歌识曲只上传在本机生成的音频指纹。";
 "ui.desktop.lyrics.fixed.responsive_font_sizes" = "24 / 28 / 38 / 50 / 72 磅（随列宽）";
@@ -1823,11 +1823,11 @@
 "ui.desktop.home.private_roaming.loading" = "正在准备私人漫游";
 "ui.desktop.home.similar_songs.loading" = "正在查找相似歌曲";
 "ui.desktop.home.daily_songs.empty" = "稍后再试，或使用“换一批”重新请求。";
-"ui.desktop.home.private_roaming.empty" = "网易云音乐暂时没有返回新的漫游歌曲。";
-"ui.desktop.home.similar_songs.empty" = "网易云音乐暂时没有找到与当前歌曲相似的内容。";
+"ui.desktop.home.private_roaming.empty" = "QQ 音乐暂时没有返回新的漫游歌曲。";
+"ui.desktop.home.similar_songs.empty" = "QQ 音乐暂时没有找到与当前歌曲相似的内容。";
 "ui.desktop.home.no_personalized_songs" = "暂无%@";
 "ui.desktop.home.sign_in_to_view" = "登录后查看%@";
-"ui.desktop.home.account_generated_playlist" = "该播放列表由网易云音乐根据你的账号偏好生成。";
+"ui.desktop.home.account_generated_playlist" = "该播放列表由 QQ 音乐根据你的账号偏好生成。";
 "ui.desktop.home.based_on_song" = "基于《%@》";
 "ui.desktop.home.song_count_date" = "%ld 首歌曲 · %@";
 "ui.desktop.home.song_count_personalized" = "%ld 首歌曲 · 专属推荐";
@@ -1835,7 +1835,7 @@
 "ui.desktop.home.private_roaming.description" = "探索你可能喜欢、但还没有听过的音乐。";
 "ui.desktop.home.similar_songs.description" = "从正在播放的歌曲出发，发现风格相近的音乐。";
 "ui.desktop.home.similar_songs.seed_description" = "从 %@ 的《%@》出发，发现风格相近的音乐。";
-"ui.desktop.home.no_available_recommendations" = "网易云音乐暂时没有返回可用的%@歌曲。";
+"ui.desktop.home.no_available_recommendations" = "QQ 音乐暂时没有返回可用的%@歌曲。";
 "ui.navigation.library.history" = "最近播放";
 "ui.desktop.sidebar.loading_cloud_library" = "正在载入云端资料库";
 "ui.cloud.loading_more" = "正在载入更多云盘歌曲";
@@ -1847,24 +1847,24 @@
 "ui.desktop.onboarding.sign_in_later" = "稍后登录";
 "ui.desktop.onboarding.welcome" = "欢迎";
 "ui.desktop.onboarding.configure" = "设置弦外";
-"ui.desktop.onboarding.subtitle" = "为 Mac 独立构建的网易云音乐播放器";
+"ui.desktop.onboarding.subtitle" = "为 Mac 独立构建的 QQ 音乐播放器";
 "ui.desktop.onboarding.feature.library" = "完整资料库";
 "ui.desktop.onboarding.feature.lyrics" = "动态歌词";
 "ui.desktop.onboarding.feature.downloads_cloud" = "下载与云盘";
 "ui.desktop.onboarding.recognition.default_duration" = "默认时长";
 "ui.desktop.onboarding.recognition.privacy" = "听歌识曲只会发送在这台 Mac 上生成的音频指纹。";
 "ui.desktop.onboarding.account.message" = "登录后即可同步喜欢的音乐、播放列表、播客、云盘、播放历史、私信和一起听。登录不是使用弦外的必要条件。";
-"ui.desktop.onboarding.benefit.direct_api" = "直接连接网易云音乐原始接口";
+"ui.desktop.onboarding.benefit.direct_api" = "直接连接 QQ 音乐原始接口";
 "ui.desktop.onboarding.benefit.independent_interfaces" = "手机端与桌面端界面和设置相互独立";
 "ui.desktop.about.version_build" = "版本 %@ (%@)";
-"ui.desktop.about.copyright" = "© %ld 洛汐聚合体。\n弦外是非官方第三方网易云音乐客户端。";
+"ui.desktop.about.copyright" = "© %ld 洛汐聚合体。\n弦外是非官方第三方 QQ 音乐客户端。";
 "ui.desktop.about.update_available.message" = "当前版本 %@，最新版本 %@。";
-"ui.desktop.listen_together.welcome.message" = "播放、暂停、切歌、进度和队列都会通过网易云一起听房间同步。";
+"ui.desktop.listen_together.welcome.message" = "播放、暂停、切歌、进度和队列都会通过 QQ 一起听房间同步。";
 "ui.desktop.listen_together.your_room" = "你发起的房间";
 "ui.desktop.listen_together.friends_room" = "已加入好友的房间";
-"ui.desktop.messages.login_message" = "登录网易云音乐后可以读取和发送私信。";
+"ui.desktop.messages.login_message" = "登录 QQ 音乐后可以读取和发送私信。";
 "ui.desktop.messages.select_conversation" = "选择一段对话";
-"ui.desktop.messages.select_conversation.message" = "你和网易云好友的私信会显示在这里。";
+"ui.desktop.messages.select_conversation.message" = "你和 QQ 好友的私信会显示在这里。";
 "ui.desktop.messages.refresh" = "刷新私信";
 "ui.desktop.messages.conversations" = "对话";
 "ui.desktop.messages.load_failed" = "无法读取私信";
@@ -1888,7 +1888,7 @@
 "ui.desktop.recognition.listening_message" = "让 Mac 靠近声源并尽量减少环境噪声。";
 "ui.desktop.recognition.open_microphone_settings" = "打开麦克风设置";
 "ui.desktop.recognition.ready.continuous" = "弦外会持续聆听并不断展示新结果，直到你手动停止；原始录音不会上传。";
-"ui.desktop.recognition.ready.limited" = "弦外最长聆听 %@，只会向网易云音乐发送设备端生成的音频指纹。";
+"ui.desktop.recognition.ready.limited" = "弦外最长聆听 %@，只会向 QQ 音乐发送设备端生成的音频指纹。";
 "ui.desktop.account.login_message" = "登录后可同步喜欢的音乐、播放列表、播客、云盘、播放记录、私信与一起听。登录 Cookie 只保存在这台 Mac。";
 "ui.desktop.account.settings" = "账户设置";
 "ui.desktop.login.direct_connection" = "网页会直接连接 music.163.com";
@@ -1970,11 +1970,11 @@
 "ui.desktop.library.empty" = "这里还没有内容";
 "ui.desktop.library.sign_in_title" = "登录后查看完整资料库";
 "ui.desktop.library.empty.message" = "在弦外中收藏、播放或下载内容后会显示在这里。";
-"ui.desktop.library.sign_in_message" = "使用网易云音乐账户同步收藏、播客和云盘。";
+"ui.desktop.library.sign_in_message" = "使用 QQ 音乐账户同步收藏、播客和云盘。";
 "ui.desktop.search.type" = "类型";
 "ui.desktop.search.failed" = "搜索失败";
 "ui.desktop.search.empty.title" = "搜索弦外";
-"ui.desktop.search.empty.message" = "结果直接来自网易云音乐原始接口。";
+"ui.desktop.search.empty.message" = "结果直接来自 QQ 音乐原始接口。";
 "ui.desktop.search.searching" = "正在搜索";
 "ui.desktop.search.scope" = "搜索范围";
 "ui.desktop.home.action.starting" = "正在启动%@";
@@ -2029,7 +2029,7 @@
 
 "ui.watch.account.connection_status" = "连接状态";
 "ui.watch.account.import_iphone" = "从 iPhone 导入";
-"ui.watch.account.login_explanation" = "使用二维码登录，或导入 iPhone 上弦外当前使用的网易云音乐账户。";
+"ui.watch.account.login_explanation" = "使用二维码登录，或导入 iPhone 上弦外当前使用的 QQ 音乐账户。";
 "ui.watch.account.qr_login" = "二维码登录";
 "ui.watch.account.sign_out" = "退出登录";
 "ui.watch.account.source.iphone" = "已从 iPhone 同步";
@@ -2072,14 +2072,14 @@
 "ui.watch.daily.title" = "每日推荐";
 
 "ui.watch.search.empty.description" = "输入歌曲、艺人或专辑名称。";
-"ui.watch.search.empty.title" = "搜索网易云音乐";
+"ui.watch.search.empty.title" = "搜索 QQ 音乐";
 "ui.watch.search.failed" = "搜索失败";
 "ui.watch.search.prompt" = "歌曲、艺人或专辑";
 "ui.watch.search.searching" = "正在搜索";
 
 "ui.watch.playlists.load_failed" = "无法载入播放列表";
 "ui.watch.playlists.loading" = "正在载入播放列表";
-"ui.watch.playlists.login_required" = "请先登录网易云音乐。";
+"ui.watch.playlists.login_required" = "请先登录 QQ 音乐。";
 "ui.watch.playlists.mine" = "我的播放列表";
 "ui.watch.playlists.songs_loading" = "正在载入歌曲";
 
@@ -2100,17 +2100,17 @@
 
 "ui.watch.now_playing.effective_quality" = "当前实际音质";
 
-"ui.watch.qr.accessibility" = "网易云音乐登录二维码";
+"ui.watch.qr.accessibility" = "QQ 音乐登录二维码";
 "ui.watch.qr.expired_refreshing" = "二维码已过期，正在刷新…";
 "ui.watch.qr.generating" = "正在生成二维码";
 "ui.watch.qr.generation_failed" = "生成二维码失败";
-"ui.watch.qr.instructions" = "使用 iPhone 上的网易云音乐 App 扫码并确认。";
+"ui.watch.qr.instructions" = "使用 iPhone 上的 QQ 音乐 App 扫码并确认。";
 "ui.watch.qr.login_succeeded" = "登录成功";
 "ui.watch.qr.regenerate" = "重新生成";
 "ui.watch.qr.scanned_confirm" = "已扫码，请在 iPhone 上确认。";
 "ui.watch.qr.status_check_failed" = "检查登录状态失败";
 "ui.watch.qr.title" = "二维码登录";
-"ui.watch.qr.waiting_confirmation" = "等待网易云音乐确认";
+"ui.watch.qr.waiting_confirmation" = "等待 QQ 音乐确认";
 "ui.watch.qr.waiting_scan" = "等待扫码";
 
 "ui.watch.lyrics.empty.description" = "开始播放歌曲后会在这里显示歌词。";
@@ -2133,7 +2133,7 @@
 "ui.release_notes.entry.apple_music_lyrics" = "增加了一比一还原的 Apple Music 26 歌词样式并作为默认值，之前的样式可切换至“自定义”样式后继续使用。";
 "ui.release_notes.entry.apple_music_background" = "增加了全新的 Apple Music 样式播放器背景，基于 Apple Music 26 一比一还原，可在设置中切换。";
 "ui.release_notes.entry.duet_lyrics" = "增加了双人歌词对唱展示的支持。";
-"ui.release_notes.entry.lyric_sources" = "增加了多源歌词优选和手动选择，支持网易云音乐、99 音乐和 AMLL。";
+"ui.release_notes.entry.lyric_sources" = "增加了多源歌词优选和手动选择，支持 QQ 音乐、99 音乐和 AMLL。";
 "ui.release_notes.entry.cellular_quality" = "添加了蜂窝网络音质设置，由 takoyakiwhite 贡献。";
 "ui.release_notes.entry.full_playlist" = "修复了播放列表只会添加歌单前 100 首歌的问题。";
 "ui.release_notes.entry.artist_selection" = "修复了播放器内前往艺人只能选择第一个艺人的问题，由 takoyakiwhite 贡献。";
@@ -2152,7 +2152,7 @@
 
 "ui.playlists.delete.title" = "删除播放列表？";
 "ui.playlists.delete.action" = "删除播放列表";
-"ui.playlists.delete.message" = "将从网易云音乐账号中永久删除“%@”及其中的歌曲列表。";
+"ui.playlists.delete.message" = "将从 QQ 音乐账号中永久删除“%@”及其中的歌曲列表。";
 
 "ui.playlists.remove_song" = "从播放列表移除";
 "ui.playlists.remove_song.message" = "从此播放列表中移除“%@”？";
