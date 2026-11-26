@@ -485,48 +485,76 @@ struct QQMusicAPI {
     }
 
     func toplists() async throws -> [Playlist] {
-        let ids = [26, 27, 4, 3, 5, 16, 21, 23, 11, 31, 60, 52, 58, 59, 64]
-        var result: [Playlist] = []
-        for topID in ids {
-            guard var components = URLComponents(
-                string: "https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg"
-            ) else { continue }
-            components.queryItems = [
-                URLQueryItem(name: "g_tk", value: "5381"),
-                URLQueryItem(name: "uin", value: "0"),
-                URLQueryItem(name: "format", value: "json"),
-                URLQueryItem(name: "inCharset", value: "utf-8"),
-                URLQueryItem(name: "outCharset", value: "utf-8"),
-                URLQueryItem(name: "notice", value: "0"),
-                URLQueryItem(name: "platform", value: "h5"),
-                URLQueryItem(name: "needNewCode", value: "1"),
-                URLQueryItem(name: "tpl", value: "3"),
-                URLQueryItem(name: "page", value: "detail"),
-                URLQueryItem(name: "type", value: "top"),
-                URLQueryItem(name: "topid", value: String(topID)),
-                URLQueryItem(name: "order", value: "2"),
-            ]
-            guard let url = components.url else { continue }
-            guard let envelope: QQToplistEnvelope = try? await client.getJSON(url),
-                  let items = envelope.songlist else {
-                continue
-            }
-            let songs = QQModelAdapter.songs(from: items.compactMap { $0.data })
-            guard !songs.isEmpty else { continue }
+        // 原来是 15 个榜单串行请求、单个 20 秒超时，首页和排行榜页会长时间空白
+        // （就是「正在为你准备推荐」一直转圈的原因）。改成并发取 6 个主榜，
+        // 单个 8 秒超时，最坏 8 秒内返回。
+        async let hot = fetchToplist(topID: 26, timeout: 8)
+        async let fresh = fetchToplist(topID: 27, timeout: 8)
+        async let rising = fetchToplist(topID: 4, timeout: 8)
+        async let newSongs = fetchToplist(topID: 3, timeout: 8)
+        async let original = fetchToplist(topID: 5, timeout: 8)
+        async let ktv = fetchToplist(topID: 16, timeout: 8)
 
-            result.append(Playlist(
-                id: topID,
-                name: envelope.topinfo?.listName ?? L10n.string("ui.lyrics.source.qq_music"),
-                coverURLString: envelope.topinfo?.pic,
-                playlistDescription: nil,
-                trackCount: songs.count,
-                playCount: 0,
-                tracks: songs,
-                trackIDs: songs.map { TrackReference(id: $0.id) },
-                subscribed: false
-            ))
+        let results: [Playlist?] = [
+            try? await hot,
+            try? await fresh,
+            try? await rising,
+            try? await newSongs,
+            try? await original,
+            try? await ktv,
+        ]
+        return results.compactMap { $0 }
+    }
+
+    /// 单个榜单。首页与排行榜页共用，`timeout` 决定 UI 最多等多久。
+    func fetchToplist(
+        topID: Int,
+        timeout: TimeInterval = 20
+    ) async throws -> Playlist {
+        guard var components = URLComponents(
+            string: "https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg"
+        ) else {
+            throw APIError.requestEncoding
         }
-        return result
+        components.queryItems = [
+            URLQueryItem(name: "g_tk", value: "5381"),
+            URLQueryItem(name: "uin", value: String(QQAuthStore.uin)),
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "inCharset", value: "utf-8"),
+            URLQueryItem(name: "outCharset", value: "utf-8"),
+            URLQueryItem(name: "notice", value: "0"),
+            URLQueryItem(name: "platform", value: "h5"),
+            URLQueryItem(name: "needNewCode", value: "1"),
+            URLQueryItem(name: "tpl", value: "3"),
+            URLQueryItem(name: "page", value: "detail"),
+            URLQueryItem(name: "type", value: "top"),
+            URLQueryItem(name: "topid", value: String(topID)),
+            URLQueryItem(name: "order", value: "2"),
+        ]
+        guard let url = components.url else {
+            throw APIError.requestEncoding
+        }
+
+        let envelope: QQToplistEnvelope = try await client.getJSON(url, timeout: timeout)
+        guard let items = envelope.songlist else {
+            throw APIError.invalidResponse
+        }
+        let songs = QQModelAdapter.songs(from: items.compactMap { $0.data })
+        guard !songs.isEmpty else {
+            throw APIError.invalidResponse
+        }
+
+        return Playlist(
+            id: topID,
+            name: envelope.topinfo?.listName ?? L10n.string("ui.lyrics.source.qq_music"),
+            coverURLString: envelope.topinfo?.pic,
+            playlistDescription: nil,
+            trackCount: songs.count,
+            playCount: 0,
+            tracks: songs,
+            trackIDs: songs.map { TrackReference(id: $0.id) },
+            subscribed: false
+        )
     }
 
     func playlists(category: String, offset: Int = 0, limit: Int = 50) async throws -> [Playlist] {
@@ -682,9 +710,13 @@ struct QQMusicAPI {
     // MARK: - 账号（QQ 游客模式：不登录，本地"我喜欢"由 Store 管理）
 
     func accountProfile() async throws -> AccountProfile {
-        AccountProfile(
-            id: 0,
-            nickname: L10n.string("ui.lyrics.source.qq_music"),
+        let uin = QQAuthStore.uin
+        let loggedIn = QQAuthStore.isLoggedIn
+        return AccountProfile(
+            id: loggedIn ? uin : 0,
+            nickname: loggedIn
+                ? "QQ \(uin)"
+                : L10n.string("ui.lyrics.source.qq_music"),
             avatarURLString: nil,
             backgroundURLString: nil,
             signature: nil,
@@ -715,67 +747,42 @@ struct QQMusicAPI {
     // MARK: - 首页
 
     func homePage(refresh: Bool = false, cursor: String? = nil) async throws -> HomePagePayload {
-        // QQ 音乐没有与网易云 block/page 对应的聚合接口，用排行榜
-        // 组装成同形状的 blocks，复用现有首页 UI。
-        let charts = try await toplists()
-        let hotSongs = charts.first?.tracks ?? []
+        // QQ 音乐没有与网易云 block/page 等价的聚合接口，用榜单拼成同形状的
+        // blocks 复用首页 UI。只并发拉 3 个榜（单个 8 秒超时），保证首页
+        // 快速离开加载态；拿不到的榜直接跳过，不阻塞整页。
+        async let hot = fetchToplist(topID: 26, timeout: 8)
+        async let fresh = fetchToplist(topID: 27, timeout: 8)
+        async let rising = fetchToplist(topID: 4, timeout: 8)
+
+        let fetched: [Playlist?] = [
+            try? await hot,
+            try? await fresh,
+            try? await rising,
+        ]
+        let charts = fetched.compactMap { $0 }
 
         var blocks: [[String: Any]] = []
 
-        // 区块一：排行榜歌单网格
-        let playlistResources: [[String: Any]] = charts.prefix(12).map { item in
-            [
-                "resourceType": "playlist",
-                "resourceId": String(item.id),
-                "uiElement": [
-                    "mainTitle": ["title": item.name],
-                    "image": ["imageUrl": item.coverURLString ?? ""],
-                ],
-                "resourceExtInfo": ["playCount": item.playCount],
-            ]
-        }
-        if !playlistResources.isEmpty {
+        if !charts.isEmpty {
+            let playlistResources: [[String: Any]] = charts.prefix(6).map { item in
+                [
+                    "resourceType": "playlist",
+                    "resourceId": String(item.id),
+                    "uiElement": [
+                        "mainTitle": ["title": item.name],
+                        "image": ["imageUrl": item.coverURLString ?? ""],
+                    ],
+                    "resourceExtInfo": ["playCount": item.playCount],
+                ]
+            }
+            // blockCode 含 TOPLIST，UI 的 HomeRecommendationFeed 会映射到 charts 分区。
             blocks.append([
-                "blockCode": "QQMUSIC_TOPLIST",
+                "blockCode": "HOMEPAGE_BLOCK_TOPLIST",
                 "creatives": [
                     [
                         "creativeId": "toplist",
                         "resources": playlistResources,
                         "uiElement": ["mainTitle": ["title": "排行榜"]],
-                    ],
-                ],
-            ])
-        }
-
-        // 区块二：热歌 song 列表（resourceExtInfo 里内嵌完整 song，UI 直接取用）
-        if !hotSongs.isEmpty {
-            let songResources: [[String: Any]] = hotSongs.prefix(20).map { song in
-                var songDict: [String: Any] = [
-                    "id": song.id,
-                    "name": song.name,
-                    "ar": song.artists.map { ["id": $0.id, "name": $0.name] as [String: Any] },
-                    "dt": song.durationMS,
-                ]
-                if let album = song.album {
-                    songDict["al"] = [
-                        "id": album.id,
-                        "name": album.name,
-                        "picUrl": album.picURL ?? "",
-                    ]
-                }
-                return [
-                    "resourceType": "song",
-                    "resourceId": String(song.id),
-                    "resourceExtInfo": ["song": songDict],
-                ]
-            }
-            blocks.append([
-                "blockCode": "QQMUSIC_HOT_SONGS",
-                "creatives": [
-                    [
-                        "creativeId": "hot_songs",
-                        "resources": songResources,
-                        "uiElement": ["mainTitle": ["title": "热歌榜"]],
                     ],
                 ],
             ])
