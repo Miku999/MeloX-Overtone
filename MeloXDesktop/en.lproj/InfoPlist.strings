@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "Overtone";
+"CFBundleName" = "Overtone";
+"NSMicrophoneUsageDescription" = "Overtone uses the microphone to listen for nearby music and create an audio fingerprint on this Mac.";

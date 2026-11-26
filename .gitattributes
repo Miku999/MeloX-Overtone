@@ -1,0 +1,21 @@
+# 统一行尾：脚本在 macOS runner 上执行，CRLF 会让 bash / python 直接报错。
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.py   text eol=lf
+*.swift text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.plist text eol=lf
+*.md   text eol=lf
+
+# 二进制资源不做行尾转换
+*.ipa   binary
+*.dmg   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.otf   binary
+*.ttf   binary
+*.mlmodelc binary
+*.car   binary

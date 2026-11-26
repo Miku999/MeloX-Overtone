@@ -1,0 +1,210 @@
+name: Build QQ Music unsigned IPA / 构建 QQ 音乐版未签名 IPA
+
+# 在 GitHub 托管的 macOS runner 上编译 build_qq_unsigned.sh，
+# 产出 MeloX-QQMusic-unsigned.ipa 并作为 artifact 供下载。
+# 不参与上游 tag / Release / Telegram 流程。
+#
+# 用法：
+#   1) 推到分支 qq 会自动触发，或在 Actions 页面手动点 "Run workflow"。
+#   2) 跑完后在该次 run 页面底部 Artifacts 下载
+#      MeloX-QQMusic-unsigned-<run_number>.zip，解开就是 .ipa。
+#
+# SDK 兼容说明：
+#   工程原来要求 Xcode 27.1+（用到 ArrangementView / reservedRegions 等
+#   iOS 27.1 API）。sdk26_compat=1（默认）会注入 MELOX_NO_IOS27，
+#   把这批 API 所在的 4 个视图退回功能等价实现，因此 iOS 26 SDK 也能编译，
+#   代价是折叠屏/双屏分屏那一套布局不生效。想要完整布局就用 Xcode 27.1+
+#   并把 sdk26_compat 设为 0、min_ios_sdk 设为 27.1。
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner label / 运行器标签"
+        required: false
+        default: "macos-26"
+        type: string
+      min_ios_sdk:
+        description: "最低 iOS SDK 版本 / Minimum iOS SDK version"
+        required: false
+        default: "26.0"
+        type: string
+      sdk26_compat:
+        description: "iOS 26 SDK 兼容模式 1=开 0=关 / SDK26 compat"
+        required: false
+        default: "1"
+        type: string
+      retention_days:
+        description: "Artifact retention days / 产物保留天数"
+        required: false
+        default: "14"
+        type: string
+  push:
+    branches:
+      - qq
+      - qq-music
+    paths:
+      - "MeloX/Core/Networking/QQ*.swift"
+      - "MeloX/Core/Networking/NeteaseAPI*.swift"
+      - "MeloX/Features/Player/NowPlaying/**"
+      - "MeloX/Features/Player/Lyrics/**"
+      - "MeloX/Features/Player/TextPV/**"
+      - "build_qq_unsigned.sh"
+      - ".github/workflows/build-qq-ipa.yml"
+      - ".github/scripts/qq_preflight.py"
+      - ".github/scripts/qq_symbols.py"
+      - ".github/scripts/select_xcode.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-qq-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build QQ Music IPA / 构建 QQ 音乐版
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout / 检出代码
+        uses: actions/checkout@v4
+        with:
+          # ReleaseNotes 构建阶段要用 git tag / merge-base，浅克隆会丢历史。
+          fetch-depth: 0
+
+      - name: Preflight structure check / 预检结构
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/qq_preflight.py
+
+      - name: Preflight symbol check / 预检跨文件符号
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/qq_symbols.py
+
+      - name: Select Xcode / 选择 Xcode
+        shell: bash
+        env:
+          MIN_IOS_SDK: ${{ inputs.min_ios_sdk || '26.0' }}
+        run: python3 .github/scripts/select_xcode.py --min-ios-sdk "${MIN_IOS_SDK}"
+
+      - name: Show toolchain / 打印工具链
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          xcrun --sdk iphoneos --show-sdk-path
+          sw_vers
+          df -h / | tail -1
+
+      - name: Build unsigned IPA / 构建未签名 IPA
+        shell: bash
+        env:
+          SDK26_COMPAT: ${{ inputs.sdk26_compat || '1' }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          bash build_qq_unsigned.sh 2>&1 | tee build/build-qq.log
+
+      - name: Verify artifact / 校验产物
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IPA="build/MeloX-QQMusic-unsigned.ipa"
+          [[ -f "${IPA}" ]] || { echo "::error::IPA not produced / 未生成 IPA"; exit 1; }
+
+          unzip -tq "${IPA}"
+          rm -rf build/verify && mkdir -p build/verify
+          unzip -q "${IPA}" -d build/verify
+
+          APP="build/verify/Payload/MeloX.app"
+          [[ -d "${APP}" ]] || { echo "::error::Payload/MeloX.app missing"; exit 1; }
+          [[ -f "${APP}/MeloX" ]] || { echo "::error::MeloX executable missing"; exit 1; }
+
+          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${APP}/Info.plist")"
+          SHORT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP}/Info.plist")"
+          MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "${APP}/Info.plist")"
+          EXEC_SIZE="$(stat -f%z "${APP}/MeloX")"
+          BYTES="$(stat -f%z "${IPA}")"
+          SHA="$(shasum -a 256 "${IPA}" | awk '{print $1}')"
+
+          WIDGET_ID="n/a"
+          WATCH_ID="n/a"
+          if [[ -f "${APP}/PlugIns/MeloXLyricsWidget.appex/Info.plist" ]]; then
+            WIDGET_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${APP}/PlugIns/MeloXLyricsWidget.appex/Info.plist")"
+          fi
+          if [[ -f "${APP}/Watch/MeloX Watch App.app/Info.plist" ]]; then
+            WATCH_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${APP}/Watch/MeloX Watch App.app/Info.plist")"
+          fi
+
+          echo "bundle_id=${BUNDLE_ID}" >> "${GITHUB_OUTPUT}"
+          echo "sha256=${SHA}" >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "## QQ Music IPA / QQ 音乐版 IPA"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| App Bundle ID | \`${BUNDLE_ID}\` |"
+            echo "| Widget Bundle ID | \`${WIDGET_ID}\` |"
+            echo "| Watch Bundle ID | \`${WATCH_ID}\` |"
+            echo "| Version | \`${SHORT_VERSION}\` |"
+            echo "| MinimumOSVersion | \`${MIN_OS}\` |"
+            echo "| Executable size | \`${EXEC_SIZE}\` bytes |"
+            echo "| IPA size | \`${BYTES}\` bytes |"
+            echo "| SHA-256 | \`${SHA}\` |"
+            echo "| Commit | \`${GITHUB_SHA}\` |"
+            echo ""
+            echo "产物名：\`MeloX-QQMusic-unsigned-${{ github.run_number }}\`（未签名，需自签名后安装）"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          case "${BUNDLE_ID}" in
+            *qqmusic*) ;;
+            *) echo "::error::Unexpected bundle id ${BUNDLE_ID}; bundle id patch did not apply"; exit 1 ;;
+          esac
+
+      - name: Upload IPA artifact / 上传 IPA 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeloX-QQMusic-unsigned-${{ github.run_number }}
+          path: build/MeloX-QQMusic-unsigned.ipa
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days || 14 }}
+
+      # Artifact 下载必须登录，Release 资产可以匿名直链下载，
+      # 所以额外把同一个 IPA 挂到一个 Release 上。
+      - name: Publish release asset / 发布到 Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: qq-build-${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          NOTES="QQ Music unsigned IPA, run ${GITHUB_RUN_NUMBER}, commit ${GITHUB_SHA}."
+          gh release create "${TAG}" \
+            build/MeloX-QQMusic-unsigned.ipa \
+            --title "QQ Music IPA build ${GITHUB_RUN_NUMBER}" \
+            --notes "${NOTES}" \
+            --latest
+          echo "Release asset URL:" >> "${GITHUB_STEP_SUMMARY}"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/MeloX-QQMusic-unsigned.ipa" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload build log / 上传构建日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeloX-QQMusic-buildlog-${{ github.run_number }}
+          path: |
+            build/build-qq.log
+            build/ReleaseNotes.json
+            build/ReleaseNotes.md
+          if-no-files-found: warn
+          retention-days: 7
