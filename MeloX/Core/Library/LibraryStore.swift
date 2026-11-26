@@ -338,7 +338,9 @@ final class LibraryStore {
                 do {
                     let songs = try await api.recentSongs()
                     guard isCurrentRefresh(cookie) else { return }
-                    recentSongs = songs
+                    // 空结果不覆盖：QQ 侧还没有稳定的播放历史接口，
+                    // 返回空数组时保留本地按播放记录累积的最近播放列表。
+                    if !songs.isEmpty { recentSongs = songs }
                 } catch is CancellationError {
                     return
                 } catch {
@@ -632,6 +634,8 @@ final class LibraryStore {
         songIndex = LibraryIndexCache()
         albumIndex = LibraryIndexCache()
         artistIndex = LibraryIndexCache()
+        // 歌单曲目缓存跟着账号走：换账号后旧 uin 的曲目不该再被命中。
+        QQSongLibraryCache.shared.clear()
         lastSuccessfulRefresh = nil
         subscribedPodcastPageLoadTask?.cancel()
         subscribedPodcastPageLoadTask = nil

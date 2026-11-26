@@ -131,26 +131,46 @@ struct QQMusicAPI {
     func songDetails(ids: [Int]) async throws -> [Song] {
         guard !ids.isEmpty else { return [] }
 
-        var mids: [String] = []
-        var unresolved: [Int] = []
+        // 第一优先：歌单 / 我喜欢那次响应里已经带回的完整曲目。
+        // 命中缓存就不再发请求，2592 首收藏从 130 次往返降为 0。
+        var resolved: [Int: Song] = [:]
+        var pending: [Int] = []
         for id in ids {
-            if let mid = QQIDRegistry.shared.mid(for: id) {
-                mids.append(mid)
+            if let cached = QQSongLibraryCache.shared.song(for: id) {
+                resolved[id] = cached
             } else {
-                unresolved.append(id)
+                pending.append(id)
             }
         }
 
-        // 缺 mid 的一次批量反查，而不是逐首反查。
-        if !unresolved.isEmpty {
-            for id in unresolved {
-                if let mid = try? await resolveSongMID(songID: id) {
+        if !pending.isEmpty {
+            var mids: [String] = []
+            var unresolved: [Int] = []
+            for id in pending {
+                if let mid = QQIDRegistry.shared.mid(for: id) {
                     mids.append(mid)
+                } else {
+                    unresolved.append(id)
+                }
+            }
+
+            // 缺 mid 的逐首反查（正常只有零星几首，整份歌单不会走到这里）。
+            if !unresolved.isEmpty {
+                for id in unresolved {
+                    if let mid = try? await resolveSongMID(songID: id) {
+                        mids.append(mid)
+                    }
+                }
+            }
+            if !mids.isEmpty {
+                for song in try await songDetails(mids: mids) {
+                    resolved[song.id] = song
                 }
             }
         }
-        guard !mids.isEmpty else { return [] }
-        return try await songDetails(mids: mids)
+
+        // 严格按调用方给的顺序返回：LibraryStore 用这份顺序当收藏排序。
+        return ids.compactMap { resolved[$0] }
     }
 
     /// 按 songmid 批量取详情，单次最多 20 首（接口上限）。
@@ -537,56 +557,51 @@ struct QQMusicAPI {
         )
     }
 
-    /// QRC 逐字行 `[mm:ss.xx]字(start,duration)...` -> YRC `[startMs,durMs]字(start,duration)...`
+    /// QRC 逐字行 `[startMs,durMs]字(start,dur)...` -> YRC `[startMs,durMs](start,dur,0)字...`
+    ///
+    /// QRC 的行头是**毫秒元组**（`[0,5000]`），不是 LRC 的 `[mm:ss.xx]`。
+    /// 早先按 LRC 时间戳去解析，`[0,5000]` 被读成「0 分 5000 秒」，
+    /// 即 5,000,000 毫秒；2592 行全部被推到 83 分钟之后。播放到 0 秒时
+    /// 没有任何一行命中，歌词视图就停在最后一句，点击任何一行 seek 到
+    /// 荒谬的巨大时间又被 clamp 回开头 —— 这正是「进来直接跳到最后一句」
+    /// 和「点前面歌词从头播放」的同一个根因。
+    ///
+    /// 直接复用 `QRCLyricNormalizer`：它本来就是这个转换的既定实现，
+    /// 且 `LyricSourceMerger` 的 QQ 分支已经在用，两条路径保持一致。
     private static func qrcToYRC(_ source: String?) -> String? {
         guard let source, !source.isEmpty else { return nil }
-        let lines = source.split(whereSeparator: \.isNewline).map(String.init)
-        let timestamps = lines.map { parseQRCLineTime($0) ?? 0 }
-
-        var output: [String] = []
-        for (index, line) in lines.enumerated() {
-            guard let close = line.firstIndex(of: "]") else { continue }
-            let start = timestamps[index]
-            let end = index + 1 < timestamps.count ? timestamps[index + 1] : start + 5_000
-            let duration = max(end - start, 0)
-            let content = String(line[line.index(after: close)...])
-            guard !content.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
-            output.append("[\(start),\(duration)]\(content)")
-        }
-        return output.isEmpty ? nil : output.joined(separator: "\n")
+        let normalized = QRCLyricNormalizer
+            .normalize(source)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalized.isEmpty ? nil : normalized
     }
 
-    /// QRC -> 普通 LRC（行级），用于没有逐字信息时的兜底显示。
+    /// QRC -> 标准 LRC（`[mm:ss.xxx]`），行级兜底与翻译轨用。
     private static func qrcToLRC(_ source: String?) -> String? {
         guard let source, !source.isEmpty else { return nil }
-        let lines = source.split(whereSeparator: \.isNewline).map(String.init)
         var output: [String] = []
-        for line in lines {
-            guard let close = line.firstIndex(of: "]") else {
-                output.append(line)
-                continue
-            }
-            let header = String(line[...close])
+        for rawLine in source.split(whereSeparator: \Character.isNewline) {
+            let line = String(rawLine).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard line.first == "[", let close = line.firstIndex(of: "]") else { continue }
+            let header = line[line.index(after: line.startIndex)..<close]
+            let parts = header.split(separator: ",", omittingEmptySubsequences: false)
+            guard parts.count >= 2,
+                  let startMilliseconds = Int(parts[0].trimmingCharacters(in: .whitespaces))
+            else { continue }
             let content = String(line[line.index(after: close)...])
-            // 去掉逐字时间戳 `(start,duration)`，保留纯文本。
+            // 去掉逐字时间戳 `(start,duration[,extra])`，只留歌词文本。
             let plain = content.replacingOccurrences(
                 of: #"\(\d+,\d+(?:,[^)]*)?\)"#,
                 with: "",
                 options: .regularExpression
-            )
-            output.append(header + plain)
+            ).trimmingCharacters(in: .whitespaces)
+            guard !plain.isEmpty else { continue }
+            let totalSeconds = Double(startMilliseconds) / 1_000
+            let minutes = Int(totalSeconds) / 60
+            let seconds = totalSeconds - Double(minutes * 60)
+            output.append(String(format: "[%02d:%06.3f]%@", minutes, seconds, plain))
         }
         return output.isEmpty ? nil : output.joined(separator: "\n")
-    }
-
-    private static func parseQRCLineTime(_ line: String) -> Int? {
-        guard line.first == "[", let close = line.firstIndex(of: "]") else { return nil }
-        let raw = line[line.index(after: line.startIndex)..<close]
-        let parts = raw.split(separator: ":", omittingEmptySubsequences: false)
-        guard parts.count >= 2,
-              let minutes = Int(parts[0]),
-              let seconds = Double(parts[1]) else { return nil }
-        return Int((Double(minutes) * 60 + seconds) * 1_000)
     }
 
     // MARK: - 歌单
@@ -600,6 +615,11 @@ struct QQMusicAPI {
         }
         let envelope: QQPlaylistDetailEnvelope = try await client.getJSON(url)
         guard let wire = envelope.cdlist.first else { throw APIError.invalidResponse }
+
+        // 详情响应里带完整曲目，顺手进缓存与 mid 表：打开歌单后紧接着的
+        // `songDetails(ids:)` 就不用再按 20 首一批反查一遍。
+        let wires = wire.songs ?? []
+        Self.cacheWireSongs(wires)
 
         var result = QQModelAdapter.playlist(from: wire)
         // 歌单详情返回的 dissid 可能被截断（例如 9466535 vs 9466535456），
@@ -1062,20 +1082,167 @@ struct QQMusicAPI {
         guard QQAuthStore.isLoggedIn else { throw APIError.notLoggedIn }
     }
 
+    /// 我的歌单（含「我喜欢」）。
+    ///
+    /// 数据源 `music.musicasset.PlaylistBaseRead / GetPlaylistByUin`：
+    /// 一次请求返回该 uin 名下全部歌单，`dirId == 201` 是「我喜欢」。
+    /// 该接口匿名也返回公开歌单，登录态（cookie）才带出私密歌单。
+    /// 实测 uin 2324496865 返回 8 个歌单、「我喜欢」2592 首。
+    ///
+    /// 返回值顺序有约定：`LibraryStore` 直接取 `first` 当作 `likedPlaylist`，
+    /// 所以「我喜欢」必须排在第一位。
     func userPlaylists(userID: Int, limit: Int = 2_000) async throws -> [Playlist] {
-        []
+        let loggedInUIN = QQMusicClient.uinString
+        let owner = loggedInUIN != "0"
+            ? loggedInUIN
+            : (userID > 0 ? String(userID) : "")
+        guard !owner.isEmpty, owner != "0" else { return [] }
+
+        // comm 段与实测脚本逐字段对齐：`uin` 必须是字符串，和 param.uin 同型；
+        // 型别不一致时服务端按匿名处理，只回公开歌单。
+        let comm: [String: Any] = [
+            "ct": 24,
+            "cv": "0",
+            "format": "json",
+            "inCharset": "utf-8",
+            "outCharset": "utf-8",
+            "notice": 0,
+            "platform": "yqq.json",
+            "needNewCode": 0,
+            "uin": owner,
+            "authst": QQAuthStore.isLoggedIn ? QQAuthStore.authst : "",
+            "tmeLoginType": QQAuthStore.isLoggedIn ? QQAuthStore.loginType : 0,
+        ]
+        let body: [String: Any] = [
+            "comm": comm,
+            "req_1": [
+                "module": "music.musicasset.PlaylistBaseRead",
+                "method": "GetPlaylistByUin",
+                "param": ["uin": owner],
+            ],
+        ]
+        guard let data = try? await client.musicuRaw(body: body, timeout: 12),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let request = root["req_1"] as? [String: Any],
+              let payload = request["data"] as? [String: Any],
+              let rows = payload["v_playlist"] as? [[String: Any]],
+              !rows.isEmpty else {
+            return []
+        }
+
+        var entries: [(dirID: Int, updated: Int, playlist: Playlist)] = []
+        for row in rows {
+            let tid = Self.intValue(row["tid"])
+            let name = Self.stringValue(row["dirName"]).trimmingCharacters(in: .whitespaces)
+            guard tid != 0, !name.isEmpty else { continue }
+            let dirID = Self.intValue(row["dirId"])
+            let cover = Self.stringValue(row["picUrl"])
+            let nick = Self.stringValue(row["nick"])
+            entries.append((
+                dirID: dirID,
+                updated: Self.intValue(row["updateTime"]),
+                playlist: Playlist(
+                    id: tid,
+                    name: name,
+                    coverURLString: cover.isEmpty ? nil : Self.secureURLString(cover),
+                    playlistDescription: nil,
+                    trackCount: Self.intValue(row["songNum"]),
+                    playCount: Self.intValue(row["play_cnt"]),
+                    creator: UserSummary(
+                        userID: Int(owner) ?? 0,
+                        nickname: nick.isEmpty ? "QQ \(owner)" : nick
+                    ),
+                    tracks: [],
+                    trackIDs: [],
+                    subscribed: dirID != 201
+                )
+            ))
+        }
+        guard !entries.isEmpty else { return [] }
+
+        // 「我喜欢」（dirId 201）置顶，其余按最近更新排序，与 QQ 客户端一致。
+        entries.sort { lhs, rhs in
+            if (lhs.dirID == 201) != (rhs.dirID == 201) { return lhs.dirID == 201 }
+            return lhs.updated > rhs.updated
+        }
+        return entries.prefix(max(limit, 1)).map { $0.playlist }
     }
 
+    /// 「我喜欢」的曲目引用。
+    ///
+    /// 走 `fcg_ucc_getcdinfo_byids_cp`：一次响应同时给出 `songnum`、
+    /// `songids` 和完整 `songlist`（含 songmid / albummid / interval /
+    /// singer），2592 首也不分页。曲目顺手写进 `QQSongLibraryCache`，
+    /// `songDetails(ids:)` 直接命中，不再逐批反查。
     func likedSongReferences(
         userID: Int,
         likedPlaylistID: Int? = nil
     ) async throws -> (references: [TrackReference], cover: String?) {
-        // QQ 游客模式没有云端"我喜欢"，由 LibraryStore 在本地维护。
-        ([], nil)
+        let disstid: Int
+        if let likedPlaylistID, likedPlaylistID != 0 {
+            disstid = likedPlaylistID
+        } else if let playlists = try? await userPlaylists(userID: userID),
+                  let first = playlists.first {
+            disstid = first.id
+        } else {
+            return ([], nil)
+        }
+
+        guard let url = URL(string: "https://i.y.qq.com/qzone-music/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg"
+            + "?type=1&json=1&utf8=1&onlysong=0&nosign=1&disstid=\(disstid)&g_tk=5381"
+            + "&loginUin=0&hostUin=0&format=json&inCharset=GB2312&outCharset=utf-8"
+            + "&notice=0&platform=yqq&needNewCode=0") else {
+            throw APIError.requestEncoding
+        }
+        let envelope: QQPlaylistDetailEnvelope = try await client.getJSON(url)
+        guard let wire = envelope.cdlist.first else { return ([], nil) }
+
+        let wires = wire.songs ?? []
+        Self.cacheWireSongs(wires)
+        var references: [TrackReference] = []
+        references.reserveCapacity(wires.count)
+        var seen: Set<Int> = []
+        for wireSong in wires {
+            let song = QQModelAdapter.song(from: wireSong)
+            guard song.id != 0, seen.insert(song.id).inserted else { continue }
+            references.append(TrackReference(id: song.id))
+        }
+        let cover = wire.logo.map { Self.secureURLString($0) }
+        return (references, cover?.isEmpty == true ? nil : cover)
     }
 
+    /// 最近播放。QQ 的播放历史需要带登录签名的私有 module，
+    /// 未拿到稳定接口时返回空数组：`LibraryStore` 已按「空数组不覆盖」
+    /// 处理，本地播放记录仍然保留在音乐库里。
     func recentSongs(limit: Int = 100) async throws -> [Song] {
         []
+    }
+
+    /// 把歌单响应里的原始曲目写进缓存。
+    ///
+    /// 不做 `register(songID:songMID:)`：`QQModelAdapter.song(from:)` 内部
+    /// 已经登记过，重复登记会把 songmid 覆盖成 media_mid，播放时 vkey
+    /// filename 就会用错 mid。
+    private static func cacheWireSongs(_ wires: [QQWireSong]) {
+        guard !wires.isEmpty else { return }
+        var songs: [Song] = []
+        songs.reserveCapacity(wires.count)
+        var mids: [Int: String] = [:]
+        mids.reserveCapacity(wires.count)
+        for wire in wires {
+            let song = QQModelAdapter.song(from: wire)
+            guard song.id != 0 else { continue }
+            songs.append(song)
+            if !wire.mid.isEmpty { mids[song.id] = wire.mid }
+        }
+        QQSongLibraryCache.shared.store(songs, mids: mids)
+    }
+
+    /// 封面地址统一升到 https：QQ 返回的是 `http://y.gtimg.cn/...`，
+    /// 明文地址在部分网络下会被运营商劫持成广告图。
+    private static func secureURLString(_ value: String) -> String {
+        guard value.hasPrefix("http://") else { return value }
+        return "https://" + value.dropFirst("http://".count)
     }
 
     // MARK: - 首页

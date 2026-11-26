@@ -47,6 +47,8 @@ on:
       - "MeloX/Info.plist"
       - "MeloX/Core/Networking/QQ*.swift"
       - "MeloX/Core/Networking/PlaybackURLNormalizer.swift"
+      - "MeloX/Core/Networking/QQSongLibraryCache.swift"
+      - "MeloX/Core/Library/**"
       - "MeloX/Core/Networking/NeteaseAPI*.swift"
       - "MeloX/Core/Playback/**"
       - "MeloX/Features/Settings/**"

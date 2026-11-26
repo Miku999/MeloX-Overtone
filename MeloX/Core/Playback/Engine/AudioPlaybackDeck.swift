@@ -140,19 +140,39 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     }
 
     func seek(to seconds: TimeInterval) {
-        guard let player else { initialSeek = max(seconds, 0); return }
+        let target = max(seconds, 0)
+        guard let player else { initialSeek = target; return }
         isSeeking = true
         finishedPosition = nil
         player.volume = 0
         transition(to: .loading)
-        if player.state == .stopped, let source {
-            initialSeek = max(seconds, 0)
+
+        // AudioStreaming 的 `seek(to:)` 开头是
+        // `guard let playingEntry = playerContext.audioPlayingEntry else { return }`，
+        // 而 `audioPlayingEntry` 只在真正起播时（processFinishPlaying）才被赋值。
+        // 所以「prepare 完成但还没开始播」「已经 stopped」这两个状态下，
+        // seek 请求会被**静默丢弃**，紧接着的 `resume()` 就从 0 秒开始 ——
+        // 表现就是「点歌词那一句，结果从头播」。
+        // 这两种状态改成把目标存进 initialSeek，由 didStartPlaying 补做。
+        switch player.state {
+        case .stopped:
+            initialSeek = target
             currentEntryID = nil
-            player.play(url: source.url)
-            return
+            if let source { player.play(url: source.url) }
+        case .ready:
+            initialSeek = target
+            if let source {
+                // .ready 只代表 prepare 完成，没有 readingEntry 时 resume()
+                // 什么都不会发生，必须重新起播让 didStartPlaying 有机会补做。
+                currentEntryID = nil
+                player.play(url: source.url)
+            } else {
+                player.resume()
+            }
+        default:
+            player.seek(to: target)
+            player.resume()
         }
-        player.seek(to: max(seconds, 0))
-        player.resume()
     }
 
     func setEqualizerConfiguration(_ configuration: AudioEqualizerConfiguration) {

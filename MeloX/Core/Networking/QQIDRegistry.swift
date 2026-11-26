@@ -21,6 +21,15 @@ nonisolated final class QQIDRegistry: @unchecked Sendable {
     private var midToID: [String: Int]
     private var entityMid: [String: String]
 
+    /// 脏标记与合并落盘状态，见 `markDirty`。
+    private var songDirty = false
+    private var entityDirty = false
+    private var flushScheduled = false
+    private static let flushQueue = DispatchQueue(
+        label: "qq.melox.idregistry.flush",
+        qos: .utility
+    )
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -46,11 +55,10 @@ nonisolated final class QQIDRegistry: @unchecked Sendable {
         let changed = idToMid[songID] != songMID
         idToMid[songID] = songMID
         midToID[songMID] = songID
-        let snapshot = idToMid
+        let shouldSchedule = changed && !flushScheduled
+        if changed { songDirty = true; flushScheduled = true }
         lock.unlock()
-        if changed {
-            persist(snapshot)
-        }
+        if shouldSchedule { scheduleFlush() }
     }
 
     func mid(for songID: Int) -> String? {
@@ -77,9 +85,11 @@ nonisolated final class QQIDRegistry: @unchecked Sendable {
             return
         }
         entityMid[key] = mid
-        let snapshot = entityMid
+        let shouldSchedule = !flushScheduled
+        entityDirty = true
+        flushScheduled = true
         lock.unlock()
-        defaults.set(snapshot, forKey: entityStorageKey)
+        if shouldSchedule { scheduleFlush() }
     }
 
     func mid(entity: String, numericID: Int) -> String? {
@@ -89,6 +99,39 @@ nonisolated final class QQIDRegistry: @unchecked Sendable {
     }
 
     // MARK: - 持久化
+
+    /// 批量登记改为「脏标记 + 0.5 秒合并落盘」。
+    ///
+    /// 原实现每登记一条就 `defaults.set` 一次全量字典。一首歌要登记
+    /// songid→songmid、media、album、singer 四条，2592 首的「我喜欢」
+    /// 就是上万次全量序列化，主线程直接卡死几十秒；这也是音乐库
+    /// 一直转圈读不出来的原因之一。合并之后一次歌单加载最多写 2 次盘，
+    /// 内存里的映射仍然是即时的，播放/歌词反查不受影响。
+    private func scheduleFlush() {
+        Self.flushQueue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.flushIfNeeded()
+        }
+    }
+
+    private func flushIfNeeded() {
+        lock.lock()
+        let needsSongs = songDirty
+        let needsEntities = entityDirty
+        let songSnapshot = idToMid
+        let entitySnapshot = entityMid
+        songDirty = false
+        entityDirty = false
+        flushScheduled = false
+        lock.unlock()
+
+        if needsSongs { persist(songSnapshot) }
+        if needsEntities { defaults.set(entitySnapshot, forKey: entityStorageKey) }
+    }
+
+    /// 立即落盘：切后台或主动退出前调用，避免丢映射。
+    func flushNow() {
+        flushIfNeeded()
+    }
 
     private func persist(_ map: [Int: String]) {
         // 控制体积：只保留最近写入的 5000 条，足够覆盖任何实际资料库规模。

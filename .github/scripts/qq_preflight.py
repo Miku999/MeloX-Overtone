@@ -22,6 +22,7 @@ REQUIRED_QQ_FILES = [
     "QQMusicBackend.swift",
     "QQMateMirror.swift",
     "PlaybackURLNormalizer.swift",
+    "QQSongLibraryCache.swift",
 ]
 
 PATCHED_FILES = [
