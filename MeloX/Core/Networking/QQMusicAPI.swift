@@ -815,6 +815,7 @@ struct QQMusicAPI {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter.date(from: string)?.timeIntervalSince1970 * 1_000
+        guard let date = formatter.date(from: string) else { return nil }
+        return date.timeIntervalSince1970 * 1_000
     }
 }
