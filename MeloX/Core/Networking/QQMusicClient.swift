@@ -87,15 +87,21 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
     }
 
     /// 上次同步过的 Cookie 串。只在内容变化时重新解析，避免每次请求都建 cookie。
-    nonisolated(unsafe) private static var lastSyncedCookieHeader = ""
-    private static let cookieLock = NSLock()
+    /// `NSLock` 不是 `Sendable`，静态持有必须包一层 `@unchecked Sendable` 容器。
+    private final class CookieSyncState: @unchecked Sendable {
+        static let shared = CookieSyncState()
+        let lock = NSLock()
+        var lastHeader = ""
+    }
+
     private static let cookieDomains = [".qq.com", ".y.qq.com", ".u.y.qq.com", ".c.y.qq.com"]
 
     private static func syncCookies(_ header: String) {
-        cookieLock.lock()
-        defer { cookieLock.unlock() }
-        guard lastSyncedCookieHeader != header else { return }
-        lastSyncedCookieHeader = header
+        let state = CookieSyncState.shared
+        state.lock.lock()
+        defer { state.lock.unlock() }
+        guard state.lastHeader != header else { return }
+        state.lastHeader = header
 
         let storage = HTTPCookieStorage.shared
         let expires = Date().addingTimeInterval(60 * 60 * 24 * 30)
@@ -122,9 +128,10 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
 
     /// 退出登录时清掉域名下的 QQ cookie，避免下次启动仍带旧凭证。
     static func clearCookies() {
-        cookieLock.lock()
-        lastSyncedCookieHeader = ""
-        cookieLock.unlock()
+        let state = CookieSyncState.shared
+        state.lock.lock()
+        state.lastHeader = ""
+        state.lock.unlock()
         let storage = HTTPCookieStorage.shared
         for cookie in storage.cookies ?? [] where cookie.domain.hasSuffix("qq.com") {
             storage.deleteCookie(cookie)
