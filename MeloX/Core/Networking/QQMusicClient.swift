@@ -25,28 +25,41 @@ final class QQMusicClient {
 
     // MARK: - 通用请求
 
-    func getJSON<Response: Decodable>(_ url: URL) async throws -> Response {
+    func getJSON<Response: Decodable>(
+        _ url: URL,
+        timeout: TimeInterval = 20
+    ) async throws -> Response {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.timeoutInterval = 20
+        request.timeoutInterval = timeout
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue(referer, forHTTPHeaderField: "Referer")
+        Self.applyAuth(&request)
         return try await perform(request)
     }
 
     func postJSON<Response: Decodable>(
         _ url: URL,
-        body: [String: Any]
+        body: [String: Any],
+        timeout: TimeInterval = 20
     ) async throws -> Response {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 20
+        request.timeoutInterval = timeout
         request.setValue("application/json;charset=UTF-8", forHTTPHeaderField: "Content-Type")
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue(referer, forHTTPHeaderField: "Referer")
+        Self.applyAuth(&request)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return try await perform(request)
+    }
+
+    /// 登录态：有 Cookie 就整串带上，`uin` / `qqmusic_key` 决定接口返回个性化数据。
+    private static func applyAuth(_ request: inout URLRequest) {
+        let header = QQAuthStore.cookieHeader
+        guard !header.isEmpty else { return }
+        request.setValue(header, forHTTPHeaderField: "Cookie")
     }
 
     /// 部分 QQ CGI 会返回 JSONP 包裹（callback(...)），这里剥壳后解码。
@@ -114,27 +127,32 @@ final class QQMusicClient {
     // MARK: - musicu.fcg 通用封装
 
     /// 构造 musicu.fcg 的 comm 段，与 QQ 音乐轻量客户端一致。
+    /// 已登录时把 `uin` / `authst` 换成真实值，匿名调用一律 0 / 空串。
     static func comm(
         ct: Int = 11,
         cv: String = "1003006"
     ) -> [String: Any] {
-        [
+        let loggedIn = QQAuthStore.isLoggedIn
+        return [
             "ct": ct,
             "cv": cv,
-            "uin": 0,
+            "uin": loggedIn ? QQAuthStore.uin : 0,
             "tmeAppID": "qqmusiclight",
-            "authst": "",
-            "tmeLoginType": 0,
+            "authst": loggedIn ? QQAuthStore.authst : "",
+            "tmeLoginType": loggedIn ? 2 : 0,
             "psrf_qqaccess_token": "",
             "psrf_qqopenid": "",
             "psrf_qqunionid": "",
         ]
     }
 
-    func musicu<Response: Decodable>(body: [String: Any]) async throws -> Response {
+    func musicu<Response: Decodable>(
+        body: [String: Any],
+        timeout: TimeInterval = 20
+    ) async throws -> Response {
         guard let url = URL(string: "https://u.y.qq.com/cgi-bin/musicu.fcg") else {
             throw APIError.requestEncoding
         }
-        return try await postJSON(url, body: body)
+        return try await postJSON(url, body: body, timeout: timeout)
     }
 }
