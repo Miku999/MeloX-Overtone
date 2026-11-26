@@ -304,6 +304,12 @@ struct QQMusicAPI {
     }
 
     /// 一次请求同时申请所需品质与全部降级档位。
+    ///
+    /// 分两轮：
+    /// 1. **不传 `filename`** —— QQ 音乐网页版 `getplaysongvkey` 就是这么发的，
+    ///    服务端按 `songmid` 自己推 filename，返回的每一档都能直接播。
+    ///    之前一直只走第 2 轮，`media_mid` 与 `songmid` 不一致时 purl 全空。
+    /// 2. 传 `filename`（media_mid 与 songmid × 全档位），覆盖第 1 轮拿不到的情况。
     private func requestVkey(
         songMID: String,
         mediaMID: String,
@@ -323,9 +329,19 @@ struct QQMusicAPI {
         ladder = ladder.filter { seenPrefixes.insert($0.prefix).inserted }
         guard !ladder.isEmpty else { throw APIError.noPlayableSource }
 
-        // 申请时同时带上 media_mid 与 song_mid 两个版本。QQ 的 filename 用
-        // media_mid，但 media_mid 从 registry 缺失时只能退回 song_mid；
-        // 两者都试一次，服务端对无效版本返回空 purl，直接跳过即可。
+        let uin = QQMusicClient.uinString
+
+        // 第 1 轮：不带 filename，让服务端按 songmid 推断。
+        if let source = try? await fetchVkey(
+            songMID: songMID,
+            filenames: nil,
+            slots: [Self.filenameTuple(for: quality)],
+            uin: uin
+        ) {
+            return source
+        }
+
+        // 第 2 轮：media_mid 与 song_mid 两套 filename 一起提交。
         var midCandidates = [mediaMID]
         if mediaMID != songMID { midCandidates.append(songMID) }
 
@@ -333,21 +349,42 @@ struct QQMusicAPI {
         let filenames = midCandidates.flatMap { mid in
             ladder.map { "\($0.prefix)\(mid).\($0.suffix)" }
         }
-        let uin = QQMusicClient.uinString
+        let slots = midCandidates.flatMap { _ in ladder }
+        return try await fetchVkey(
+            songMID: songMID,
+            filenames: filenames,
+            slots: slots,
+            uin: uin
+        )
+    }
+
+    /// 单次 vkey 请求。`filenames == nil` 时不带 `filename` 字段。
+    private func fetchVkey(
+        songMID: String,
+        filenames: [String]?,
+        slots: [(quality: MusicQuality, prefix: String, suffix: String, bitrate: Int?)],
+        uin: String
+    ) async throws -> PlaybackSource {
+        var param: [String: Any] = [
+            "guid": QQAuthStore.guid,
+            "songmid": [songMID],
+            "songtype": [0],
+            "uin": uin,
+            "loginflag": 1,
+            "platform": "20",
+            "ctx": 1,
+        ]
+        if let filenames, !filenames.isEmpty {
+            param["filename"] = filenames
+            param["songmid"] = Array(repeating: songMID, count: filenames.count)
+            param["songtype"] = Array(repeating: 0, count: filenames.count)
+        }
+
         let body: [String: Any] = [
             "req_1": [
                 "module": "vkey.GetVkeyServer",
                 "method": "CgiGetVkey",
-                "param": [
-                    "filename": filenames,
-                    "guid": QQAuthStore.guid,
-                    "songmid": Array(repeating: songMID, count: filenames.count),
-                    "songtype": Array(repeating: 0, count: filenames.count),
-                    "uin": uin,
-                    "loginflag": 1,
-                    "platform": "20",
-                    "ctx": 1,
-                ],
+                "param": param,
             ],
             "loginUin": uin,
             "comm": QQMusicClient.vkeyComm(),
@@ -357,18 +394,17 @@ struct QQMusicAPI {
         let sip = envelope.req1.data?.sip?.first ?? ""
         let infos = envelope.req1.data?.midurlinfo ?? []
         QQPlaybackDiagnostics.shared.log(
-            "vkey resp code=\(envelope.req1.code ?? -1) sip=\(sip) purl=\(infos.compactMap { $0.purl }.filter { !$0.isEmpty }.count)/\(infos.count)"
+            "vkey resp code=\(envelope.req1.code ?? -1) sip=\(sip) purl=\(infos.compactMap { $0.purl }.filter { !$0.isEmpty }.count)/\(infos.count) fn=\(filenames?.count ?? 0)"
         )
 
         // 文件服务地址缺失时，用 QQ 固定 CDN 兜底，purl 本身是完整相对路径。
         let host = sip.isEmpty ? "http://ws.stream.qqmusic.qq.com/" : sip
         for (index, info) in infos.enumerated() {
-            guard index < filenames.count else { break }
             let purl = info.purl ?? ""
             guard !purl.isEmpty else { continue }
             // purl 落在 http:// 上，统一升级到 https，避开 ATS 与 80 端口劫持。
             guard let url = PlaybackURLNormalizer.normalize(rawURL: host + purl) else { continue }
-            let slot = ladder[index % ladder.count]
+            let slot = slots.isEmpty ? Self.filenameTuple(for: .high) : slots[index % slots.count]
             return PlaybackSource(
                 url: url,
                 bitrate: slot.bitrate,
