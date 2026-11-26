@@ -2,6 +2,7 @@ import Foundation
 
 extension NeteaseAPI {
     func subscribedAlbums(limit: Int = 2_000) async throws -> [Album] {
+        if QQMusicBackend.enabled { return try await qq.subscribedAlbums(limit: limit) }
         // @neteaseapireborn/api/module/album_sublist.js uses this original
         // NetEase WEAPI endpoint with limit, offset, and total.
         let path = "/api/album/sublist"
