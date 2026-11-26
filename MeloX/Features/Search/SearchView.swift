@@ -122,10 +122,15 @@ struct SearchView: View {
     }
 
     private var searchPlacement: SearchFieldPlacement {
+        #if MELOX_NO_IOS27
+        // .toolbarPrincipal 是 iOS 27 新增的 SearchFieldPlacement。
+        return .navigationBarDrawer(displayMode: .always)
+        #else
         if #available(iOS 27, *) {
             return .toolbarPrincipal
         }
         return .navigationBarDrawer(displayMode: .always)
+        #endif
     }
 
     private func loadSuggestions() async {
