@@ -41,7 +41,7 @@
 "ui.settings.navigation.page.subscribed_podcasts" = "Podcasts (Subscribed)";
 "ui.settings.navigation.placement.tab_bar" = "Tab Bar";
 
-"ui.settings.content_feature.cloud.detail" = "Access your NetEase Cloud Music uploads and cloud library";
+"ui.settings.content_feature.cloud.detail" = "Access your QQ Music uploads and cloud library";
 "ui.settings.content_feature.cloud.title" = "Cloud Music";
 "ui.settings.content_feature.downloads.detail" = "Local downloads and your downloaded library";
 "ui.settings.content_feature.history.detail" = "Playback history from this device and your account";
@@ -94,7 +94,7 @@
 "ui.lyrics.source.amll" = "AMLL";
 "ui.lyrics.source.amll_ttml" = "AMLL TTML";
 "ui.lyrics.source.automatic" = "Automatic";
-"ui.lyrics.source.netease" = "NetEase Cloud Music";
+"ui.lyrics.source.netease" = "QQ Music";
 "ui.lyrics.source.qq_music" = "QQ Music";
 "ui.error.lyrics.invalid_response" = "The lyrics service returned data Overtone could not recognize.";
 "ui.error.lyrics.unavailable" = "Time-synced lyrics are not available for this song.";
@@ -165,9 +165,9 @@
 "ui.common.supported" = "Supported";
 "ui.common.unsupported" = "Unsupported";
 
-"ui.service.netease" = "NetEase Cloud Music";
-"ui.metadata.netease_host" = "NetEase Host";
-"ui.metadata.netease_user" = "NetEase User";
+"ui.service.netease" = "QQ Music";
+"ui.metadata.netease_host" = "QQ Music Host";
+"ui.metadata.netease_user" = "QQ Music User";
 "ui.metadata.unknown_album" = "Unknown Album";
 "ui.metadata.unknown_artist" = "Unknown Artist";
 "ui.metadata.unknown_playlist" = "Unknown Playlist";
@@ -191,32 +191,32 @@
 "ui.podcast.sort.newest" = "Newest First";
 "ui.podcast.sort.oldest" = "Oldest First";
 
-"ui.error.api.request_encoding" = "Could not create the NetEase Cloud Music request.";
+"ui.error.api.request_encoding" = "Could not create the QQ Music request.";
 "ui.error.api.invalid_response" = "The music service returned data Overtone could not recognize.";
 "ui.error.api.empty_response" = "The music service returned an empty response (%ld).";
 "ui.error.api.server" = "Request failed (%ld): %@";
 "ui.error.api.no_playable_source" = "This song may be unavailable due to copyright or regional restrictions.";
-"ui.error.api.login_required" = "Sign in to NetEase Cloud Music first.";
-"ui.error.api.operation_incomplete" = "NetEase Cloud Music did not complete the operation.";
+"ui.error.api.login_required" = "Sign in to QQ Music first.";
+"ui.error.api.operation_incomplete" = "QQ Music did not complete the operation.";
 "ui.error.api.decode_with_hex" = "Could not decode %ld bytes (%@): %@";
 "ui.error.api.decode" = "Could not decode %ld bytes (%@): %@";
 "ui.error.update.no_release" = "This repository has no published release yet.";
 "ui.error.update.invalid_release" = "The release information is incomplete.";
-"ui.error.heart_mode.no_playable_song" = "NetEase Cloud Music did not return a playable Heart Mode song.";
+"ui.error.heart_mode.no_playable_song" = "QQ Music did not return a playable Heart Mode song.";
 "ui.error.home.load_failed" = "Could not load Home recommendations.";
 "ui.error.private_radio.start_failed" = "Could not start Personal FM.";
 "ui.error.song_wiki.load_failed" = "Could not load song details.";
 "ui.error.decode.string_or_numeric_id" = "Expected a string or numeric identifier.";
 "ui.error.decode.integer" = "Expected an integer or integer string.";
 "ui.error.share.recipient_required" = "Select at least one recipient.";
-"ui.error.share.unsupported_timeline_resource" = "NetEase Cloud Music cannot repost this content type to your feed.";
+"ui.error.share.unsupported_timeline_resource" = "QQ Music cannot repost this content type to your feed.";
 
 "ui.cloud.storage_usage" = "%@ used of %@";
 "ui.error.cloud.upload_failed" = "Upload failed: %@";
 "ui.error.cloud.delete_failed" = "Delete failed: %@";
 "ui.error.cloud.read_file_failed" = "Could not read the selected file: %@";
 "ui.error.cloud.invalid_audio_file" = "The selected file is not a supported audio file.";
-"ui.error.cloud.no_upload_server" = "NetEase Cloud Music did not return an available upload server.";
+"ui.error.cloud.no_upload_server" = "QQ Music did not return an available upload server.";
 "ui.error.download.invalid_response" = "The song download service returned an invalid response.";
 "ui.error.download.empty_file" = "The downloaded song file is empty.";
 "ui.error.download.database_unavailable" = "The download database is unavailable.";
@@ -259,21 +259,21 @@
 "ui.listen_together.operation.joining" = "Joining";
 "ui.listen_together.operation.leaving" = "Leaving";
 "ui.listen_together.notice.room_ended" = "The Listen Together room has ended.";
-"ui.listen_together.notice.account_moved" = "Your NetEase account joined another Listen Together room.";
+"ui.listen_together.notice.account_moved" = "Your QQ Music account joined another Listen Together room.";
 "ui.error.listen_together.invitation_empty" = "Paste a Listen Together invitation link.";
 "ui.error.listen_together.missing_room_id" = "The invitation link is missing a room ID.";
 "ui.error.listen_together.missing_inviter_id" = "The invitation link is missing an inviter ID.";
 "ui.error.listen_together.song_required" = "Play a song before starting Listen Together.";
 "ui.error.listen_together.room_full" = "This Listen Together room is full.";
 "ui.error.listen_together.room_unavailable" = "This Listen Together room cannot be joined right now.";
-"ui.error.listen_together.missing_room" = "NetEase Cloud Music did not return a valid Listen Together room.";
-"ui.error.listen_together.missing_account" = "Could not read the current NetEase account. Sign in again and retry.";
+"ui.error.listen_together.missing_room" = "QQ Music did not return a valid Listen Together room.";
+"ui.error.listen_together.missing_account" = "Could not read the current QQ Music account. Sign in again and retry.";
 "ui.error.listen_together.invalid_playback_state" = "This Listen Together room has no playback state to sync yet.";
 "ui.error.listen_together.initial_sync_failed" = "The room was created, but the initial sync failed: %@";
 "ui.error.listen_together.waiting_for_playback" = "Joined the room and waiting for playback state: %@";
-"ui.error.listen_together.leave_failed" = "Local sync stopped, but the request to leave the NetEase room failed: %@";
-"ui.error.listen_together.end_failed" = "NetEase Cloud Music could not end the Listen Together room.";
-"ui.error.listen_together.operation_incomplete" = "NetEase Cloud Music did not complete the Listen Together operation.";
+"ui.error.listen_together.leave_failed" = "Local sync stopped, but the request to leave the QQ Music room failed: %@";
+"ui.error.listen_together.end_failed" = "QQ Music could not end the Listen Together room.";
+"ui.error.listen_together.operation_incomplete" = "QQ Music did not complete the Listen Together operation.";
 
 "ui.lyrics.format.token.lyrics" = "{Lyrics}";
 "ui.lyrics.format.token.title" = "{Title}";
@@ -363,7 +363,7 @@
 "ui.settings.catalog.developer.title" = "Developer Options";
 "ui.settings.catalog.developer.subtitle" = "BeatNet analysis and player debugging tools";
 "ui.settings.catalog.developer.keywords" = "BeatNet|beat|downbeat|Onset|debug|Core ML|full-track analysis";
-"ui.settings.catalog.account.keywords" = "NetEase account|sign in|sign out|Cookie|profile|user ID";
+"ui.settings.catalog.account.keywords" = "QQ Music account|sign in|sign out|Cookie|profile|user ID";
 "ui.settings.catalog.reset.keywords" = "restore default player settings|reset|restore|player|lyrics|equalizer|AutoMix";
 
 "ui.settings.general.theme.picker" = "Theme";
@@ -374,23 +374,23 @@
 "ui.settings.general.launch_navigation.section" = "Launch & Navigation";
 "ui.settings.general.launch_navigation.restore.footer" = "Overtone returns to the last main page you used at the next launch. Turn this off to open the selected default page.";
 "ui.settings.general.launch_navigation.default.footer" = "The default launch page takes effect the next time Overtone starts.";
-"ui.settings.general.clipboard_recognition" = "Recognize NetEase Links on the Clipboard";
+"ui.settings.general.clipboard_recognition" = "Recognize QQ Music Links on the Clipboard";
 "ui.settings.general.clipboard.section" = "Clipboard";
-"ui.settings.general.clipboard.footer" = "When enabled, Overtone reads the clipboard once at each launch. It asks before opening a recognized NetEase song or Listen Together link. The system may show a paste permission prompt.";
+"ui.settings.general.clipboard.footer" = "When enabled, Overtone reads the clipboard once at each launch. It asks before opening a recognized QQ Music song or Listen Together link. The system may show a paste permission prompt.";
 "ui.settings.general.library.restore_last_page" = "Remember Last Library Page";
 "ui.settings.general.library.default_page" = "Default Page";
 "ui.settings.general.library.restore.footer" = "Library returns to the last built-in page you viewed after relaunching.";
 "ui.settings.general.library.default.footer" = "The selected page appears the first time you open Library after each launch.";
 
 "ui.settings.account.cookie.footer" = "Your sign-in cookie is stored only on this device and is used to sync favorites, Cloud Music, and account content.";
-"ui.settings.account.logout.confirmation" = "Sign Out of This NetEase Account?";
+"ui.settings.account.logout.confirmation" = "Sign Out of This QQ Music Account?";
 "ui.settings.account.logout" = "Sign Out";
-"ui.settings.account.logout.message.downloads" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device. Downloaded songs will not be deleted.";
-"ui.settings.account.logout.message" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device.";
+"ui.settings.account.logout.message.downloads" = "The saved QQ Music sign-in cookie and loaded account data will be removed from this device. Downloaded songs will not be deleted.";
+"ui.settings.account.logout.message" = "The saved QQ Music sign-in cookie and loaded account data will be removed from this device.";
 "ui.settings.account.open.hint" = "Opens account information and your profile";
-"ui.settings.account.netease_account" = "NetEase Cloud Music Account";
+"ui.settings.account.netease_account" = "QQ Music Account";
 "ui.settings.account.loading" = "Loading Account Information";
-"ui.settings.account.login" = "Sign In to NetEase Cloud Music";
+"ui.settings.account.login" = "Sign In to QQ Music";
 "ui.settings.account.login.subtitle" = "Sync favorites, Cloud Music, and playback history";
 "ui.settings.account.subtitle.level" = "Lv.%ld · User ID %ld";
 "ui.settings.account.subtitle" = "User ID %ld · Account Info & Sync";
@@ -502,7 +502,7 @@
 "ui.settings.live_activity.expanded.section" = "Expanded & Lock Screen";
 "ui.settings.live_activity.title" = "Live Activity Lyrics";
 
-"ui.about.tagline" = "A Third-Party NetEase Cloud Music Player";
+"ui.about.tagline" = "A Third-Party QQ Music Player";
 "ui.about.app_info.section" = "App Information";
 "ui.about.version" = "Version";
 "ui.about.build" = "Build";
@@ -513,7 +513,7 @@
 "ui.about.updates.section" = "Updates";
 "ui.about.updates.footer" = "Automatic checks only notify you when a new version is available. A failed check never interrupts app launch.";
 "ui.about.melox.section" = "About Overtone";
-"ui.about.description" = "Overtone is a native SwiftUI player for NetEase Cloud Music with synchronized lyrics.";
+"ui.about.description" = "Overtone is a native SwiftUI player for QQ Music with synchronized lyrics.";
 "ui.about.shareholders.section" = "Shareholders";
 "ui.about.community.section" = "Project & Community";
 "ui.about.website" = "MeloX Upstream Website";
@@ -525,7 +525,7 @@
 "ui.about.open_source.section" = "Open Source & Licenses";
 "ui.about.open_source.footer" = "View licenses and attribution for MeloX, reference projects, the audio fingerprint runtime, bundled resources, and PV Tool.";
 "ui.about.disclaimer.section" = "Disclaimer";
-"ui.about.disclaimer" = "Overtone is an unofficial third-party client and is not affiliated with or authorized by NetEase Cloud Music or its related companies.";
+"ui.about.disclaimer" = "Overtone is an unofficial third-party client and is not affiliated with or authorized by QQ Music or its related companies.";
 "ui.about.open_release_page" = "Open Release Page";
 "ui.about.update_available.title" = "New Version Available";
 "ui.about.update_available.message" = "Current version: %@. Latest version: %@. Open the release page to see what's new.";
@@ -592,7 +592,7 @@
 "ui.settings.playback.remember_page" = "Remember Player Page";
 "ui.settings.playback.previous_restarts" = "Previous Button Restarts Current Song";
 "ui.settings.playback.section.behavior" = "Playback Behavior";
-"ui.settings.playback.behavior.footer" = "Starting in Heart Mode requires a NetEase Cloud Music account. On the next launch, My Favorite Music will load and begin playing. Page memory restores the last artwork, lyrics, or queue page. When previous-button restart is enabled, tapping Previous after 5 seconds restarts the current song first.";
+"ui.settings.playback.behavior.footer" = "Starting in Heart Mode requires a QQ Music account. On the next launch, My Favorite Music will load and begin playing. Page memory restores the last artwork, lyrics, or queue page. When previous-button restart is enabled, tapping Previous after 5 seconds restarts the current song first.";
 "ui.settings.automix.title" = "AutoMix";
 "ui.settings.automix.enabled" = "AutoMix";
 "ui.settings.automix.transition_mode" = "Transition Mode";
@@ -760,7 +760,7 @@
 "ui.settings.lyrics.content.romanization_display_range" = "Romanization Display Range";
 "ui.settings.lyrics.content.translation_display_range" = "Translation Display Range";
 "ui.settings.lyrics.content.section.translation_pronunciation" = "Translation & Pronunciation";
-"ui.settings.lyrics.content.translation.footer" = "Uses yromalrc/romalrc and ytlrc/tlyric supplied by NetEase Cloud Music. In the Apple Music style, romanization appears beneath the main lyrics and aligns with the original words. Translation appears on the next level as a static full line.";
+"ui.settings.lyrics.content.translation.footer" = "Uses yromalrc/romalrc and ytlrc/tlyric supplied by QQ Music. In the Apple Music style, romanization appears beneath the main lyrics and aligns with the original words. Translation appears on the next level as a static full line.";
 "ui.settings.lyrics.content.romanization_size" = "Romanization Size";
 "ui.settings.lyrics.content.romanization_brightness" = "Romanization Brightness";
 "ui.settings.lyrics.content.section.romanization_style" = "Romanization Style";
@@ -771,7 +771,7 @@
 "ui.settings.lyrics.content.amll_source" = "AMLL TTML Lyrics";
 "ui.settings.lyrics.content.qq_source" = "QQ Music Lyrics Supplement";
 "ui.settings.lyrics.content.section.source" = "Lyrics Sources";
-"ui.settings.lyrics.content.source.footer" = "Automatic selection displays NetEase lyrics first, then waits for AMLL and QQ Music before choosing in this order: AMLL TTML, NetEase YRC, QQ QRC, NetEase LRC, and QQ LRC. Selecting a source manually uses only that source; you can switch again from the player menu at any time.";
+"ui.settings.lyrics.content.source.footer" = "Automatic selection displays QQ Music lyrics first, then waits for AMLL and QQ Music before choosing in this order: AMLL TTML, QQ Music YRC, QQ QRC, QQ Music LRC, and QQ LRC. Selecting a source manually uses only that source; you can switch again from the player menu at any time.";
 "ui.settings.lyrics.content.duet_layout" = "Split Duet Lyrics";
 "ui.settings.lyrics.content.section.performer_layout" = "Performer Layout";
 "ui.settings.lyrics.content.duet_layout.footer" = "Uses performer markers in the lyrics to align different singers left and right. Group vocals remain left-aligned.";
@@ -783,7 +783,7 @@
 "ui.settings.lyrics.content.syllable_lift" = "Syllable Lift";
 "ui.settings.lyrics.content.glow_radius" = "Glow Radius";
 "ui.settings.lyrics.content.long_tone_maximum_emphasis" = "Maximum Long-Tone Emphasis";
-"ui.settings.lyrics.content.netease_yrc_long_tone_threshold" = "NetEase YRC Long-Tone Threshold";
+"ui.settings.lyrics.content.netease_yrc_long_tone_threshold" = "QQ Music YRC Long-Tone Threshold";
 "ui.settings.lyrics.content.section.apple_music_word_by_word" = "Apple Music 26 Word-by-Word";
 "ui.settings.lyrics.content.long_tone_threshold.footer" = "Long tones are detected from syllable duration in word-timed lyrics. Raising the threshold applies the effect to fewer syllables.";
 "ui.settings.lyrics.content.lift_mode" = "Lift Mode";
@@ -871,7 +871,7 @@
 "ui.settings.storage.delete_all_downloads" = "Delete All Downloads";
 "ui.settings.storage.delete_all_downloads.subtitle" = "Also cancels active download tasks";
 "ui.settings.storage.section.destructive" = "Destructive Actions";
-"ui.settings.storage.destructive.footer" = "Deleted song files cannot be recovered, but favorites and playlists in NetEase Cloud Music are unaffected.";
+"ui.settings.storage.destructive.footer" = "Deleted song files cannot be recovered, but favorites and playlists in QQ Music are unaffected.";
 "ui.settings.storage.operation.cleared_approximately" = "Cleared approximately %@";
 "ui.settings.storage.operation.cleared_network_cache" = "Cleared %@ of network and artwork cache";
 "ui.settings.storage.operation.cleared_temporary_files" = "Cleared %@ of temporary files";
@@ -914,7 +914,7 @@
 "ui.error.floating_lyrics.title" = "Could Not Open Floating Lyrics";
 "ui.error.picture_in_picture.unavailable" = "System Picture in Picture is temporarily unavailable.";
 "ui.messages.private.title" = "Private Messages";
-"ui.messages.private.open_hint" = "Open NetEase Cloud Music private messages";
+"ui.messages.private.open_hint" = "Open QQ Music private messages";
 "ui.recognition.title" = "Song Recognition";
 "ui.recognition.source" = "Audio Source";
 "ui.recognition.source.microphone" = "Microphone";
@@ -942,28 +942,28 @@
 "ui.update.available.title" = "New Version Available";
 "ui.update.open_release_page" = "Open Release Page";
 "ui.update.available.message" = "Current version: %@. Latest version: %@. Open the release page to see what’s new.";
-"ui.clipboard.error.song_not_found" = "NetEase Cloud Music did not return information for this song.";
+"ui.clipboard.error.song_not_found" = "QQ Music did not return information for this song.";
 "ui.clipboard.title" = "Clipboard Link";
 "ui.clipboard.open_link_prompt" = "Open this link in Overtone?";
 "ui.clipboard.error.title" = "Could Not Open Clipboard Link";
 "ui.clipboard.opening_song" = "Opening Song…";
 "ui.clipboard.opening_song_accessibility" = "Opening the song from the clipboard";
-"ui.clipboard.song_link_found" = "NetEase Song Link Found";
+"ui.clipboard.song_link_found" = "QQ Music Song Link Found";
 "ui.clipboard.listen_together_found" = "Listen Together Invitation Found";
 "ui.clipboard.song_prompt" = "Open the song link from the clipboard in Overtone?";
 "ui.clipboard.listen_together_prompt" = "View the Listen Together invitation from the clipboard? You can review the invitation link before joining.";
 "ui.clipboard.open_song" = "Open Song";
 "ui.clipboard.view_invitation" = "View Invitation";
-"ui.onboarding.welcome.subtitle" = "Discover, play, and collect music from NetEase Cloud Music in a native app.";
-"ui.legal.unofficial_disclaimer" = "Overtone is an unofficial third-party client and is not affiliated with, partnered with, or authorized by NetEase Cloud Music or its affiliates.";
+"ui.onboarding.welcome.subtitle" = "Discover, play, and collect music from QQ Music in a native app.";
+"ui.legal.unofficial_disclaimer" = "Overtone is an unofficial third-party client and is not affiliated with, partnered with, or authorized by QQ Music or its affiliates.";
 "ui.legal.projects_licenses.title" = "Projects & Licenses";
 "ui.onboarding.account.logged_in_message" = "Your favorite songs, playlists, and listening history appear in Library.";
 "ui.onboarding.start" = "Start Using Overtone";
-"ui.account.login_netease" = "Sign In to NetEase Cloud Music";
-"ui.service.netease_cloud_music" = "NetEase Cloud Music";
-"ui.account.netease_account" = "NetEase Cloud Music Account";
+"ui.account.login_netease" = "Sign In to QQ Music";
+"ui.service.netease_cloud_music" = "QQ Music";
+"ui.account.netease_account" = "QQ Music Account";
 "ui.account.logged_in" = "Signed In";
-"ui.onboarding.account.connect" = "Connect NetEase Cloud Music";
+"ui.onboarding.account.connect" = "Connect QQ Music";
 "ui.onboarding.account.connect_message" = "Sign in to sync your personal music library and use account features. Signing in is not required to start using Overtone.";
 "ui.onboarding.benefit.sync_library" = "Sync favorite songs, playlists, and listening history";
 "ui.onboarding.benefit.personalized_content" = "Access Daily Recommendations and other personalized content";
@@ -996,8 +996,8 @@
 "ui.legal.section.licenses" = "Licenses";
 "ui.legal.netease_audio_fingerprint" = "@neteaseapireborn/api Audio Fingerprint";
 "ui.legal.reference.better_lyrics" = "Reference for word-by-word lyric rendering, glow, and motion";
-"ui.legal.reference.lyricify" = "Reference for parsing NetEase YRC word-timed lyrics";
-"ui.legal.reference.yesplaymusic" = "Reference for NetEase APIs and player implementation";
+"ui.legal.reference.lyricify" = "Reference for parsing QQ Music YRC word-timed lyrics";
+"ui.legal.reference.yesplaymusic" = "Reference for QQ Music APIs and player implementation";
 "ui.legal.reference.netease_api" = "Song-recognition routes and audio-fingerprint runtime";
 "ui.legal.reference.pv_tool" = "Original implementation of Text PV templates and effects";
 "ui.legal.reference.beatnet" = "Beat, downbeat, and tempo analysis model for AutoMix";
@@ -1011,7 +1011,7 @@
 "ui.legal.document.source_han_serif.title" = "Source Han Serif License";
 "ui.legal.document.beatnet.title" = "BeatNet Model License";
 "ui.legal.document.melox.fallback" = "The MeloX application is released under GNU General Public License version 3. When copying, modifying, or distributing it, retain copyright and license notices and comply with GPLv3 source-code availability and same-license distribution requirements. Separate licenses for third-party code and resources remain in effect.";
-"ui.legal.document.yesplaymusic.fallback" = "MeloX’s NetEase APIs and player implementation reference qier222/YesPlayMusic. YesPlayMusic is released under the MIT License, Copyright © 2020–2023 qier222. Its copyright and license notices must be retained when using the software or substantial portions of it.";
+"ui.legal.document.yesplaymusic.fallback" = "MeloX’s QQ Music APIs and player implementation reference qier222/YesPlayMusic. YesPlayMusic is released under the MIT License, Copyright © 2020–2023 qier222. Its copyright and license notices must be retained when using the software or substantial portions of it.";
 "ui.legal.document.source_han_serif.fallback" = "Source Han Serif is licensed under the SIL Open Font License 1.1. The full license is included with the app resources.";
 "ui.legal.document.beatnet.fallback" = "MeloX uses Mojtaba Heydari’s BeatNet generic model converted to Core ML. The model is licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).";
 "ui.legal.document.pv_tool.fallback" = "PV Tool uses a Non-Commercial License. It may not be used in commercial products, paid services, or other commercial settings without written permission from the author. Commercial use requires separate authorization from the original author.";
@@ -1061,7 +1061,7 @@
 "ui.search.popular_recommendations" = "Popular Recommendations";
 "ui.search.loading_recommendations" = "Loading Recommendations";
 "ui.search.recommendations_failed" = "Could Not Load Recommendations";
-"ui.search.prompt" = "Music or a NetEase Cloud Music Link";
+"ui.search.prompt" = "Music or a QQ Music Link";
 "ui.search.failed" = "Search Failed";
 "ui.search.link_failed" = "Could Not Open Link";
 "ui.error.favorite_failed" = "Favorite Operation Failed";
@@ -1069,7 +1069,7 @@
 "ui.search.reading_song_link" = "Reading Song Link";
 "ui.search.section.linked_song" = "Song from Link";
 "ui.listen_together.invitation" = "Listen Together Invitation";
-"ui.search.listen_together_link_recognized" = "A NetEase Cloud Music Listen Together share link was recognized.";
+"ui.search.listen_together_link_recognized" = "A QQ Music Listen Together share link was recognized.";
 "ui.toplists.title" = "Charts";
 "ui.toplists.loading" = "Loading Charts";
 "ui.toplists.empty" = "No Charts";
@@ -1086,12 +1086,12 @@
 "ui.home.no_recommendations" = "No Recommendations";
 "ui.home.no_personalized_recommendations" = "No Personalized Recommendations";
 "ui.home.pull_to_refresh" = "Pull to refresh and try again.";
-"ui.home.login_for_personalized_content" = "Sign in to NetEase Cloud Music to see the full personalized experience.";
+"ui.home.login_for_personalized_content" = "Sign in to QQ Music to see the full personalized experience.";
 "ui.home.error.no_private_radar" = "No available Private Radar playlist was found in the current recommendations.";
-"ui.home.error.login_required" = "Sign in to NetEase Cloud Music first.";
+"ui.home.error.login_required" = "Sign in to QQ Music first.";
 "ui.home.error.liked_songs_required" = "Favorite some songs before using Heart Mode.";
 "ui.home.error.current_song_required" = "Play a song before searching for similar music.";
-"ui.home.error.no_playable_recommendations" = "NetEase Cloud Music did not return any playable recommendations.";
+"ui.home.error.no_playable_recommendations" = "QQ Music did not return any playable recommendations.";
 "ui.home.section.recommended_playlists" = "Recommended Playlists";
 "ui.home.section.recently_trending" = "Trending in Cloud Village";
 "ui.home.section.tailored" = "Recommended for Your Taste";
@@ -1162,7 +1162,7 @@
 "ui.library.searching_all_favorite_songs" = "Searching All Favorite Songs";
 "ui.library.search_again" = "Search Again";
 "ui.library.no_favorite_songs" = "No Favorite Songs Yet";
-"ui.library.no_favorite_songs.message" = "Swipe left on a song in a list to favorite it in NetEase Cloud Music.";
+"ui.library.no_favorite_songs.message" = "Swipe left on a song in a list to favorite it in QQ Music.";
 "ui.library.section.mine" = "Mine";
 "ui.library.my_listening_rank" = "My Listening Rank";
 "ui.library.my_listening_rank.hint" = "View your listening rank for the past week or all time";
@@ -1182,7 +1182,7 @@
 "ui.library.no_subscribed_podcasts.message" = "Open a podcast and tap the Subscribe button.";
 "ui.library.searching_all_subscribed_podcasts" = "Searching All Subscribed Podcasts";
 "ui.library.no_history" = "No Listening History Yet";
-"ui.library.no_history.message" = "Recently played music from NetEase Cloud Music appears here.";
+"ui.library.no_history.message" = "Recently played music from QQ Music appears here.";
 "ui.library.error.playlists" = "Playlists: %@";
 "ui.library.error.favorite_albums" = "Favorite albums: %@";
 "ui.library.error.subscribed_podcasts" = "Subscribed Podcasts: %@";
@@ -1228,7 +1228,7 @@
 "ui.downloads.select_quality" = "Choose Download Quality";
 "ui.playlists.add_to" = "Add to Playlist";
 "ui.playlists.add_failed" = "Could Not Add to Playlist";
-"ui.playlists.login_to_add" = "Sign in to NetEase Cloud Music before adding songs to one of your playlists.";
+"ui.playlists.login_to_add" = "Sign in to QQ Music before adding songs to one of your playlists.";
 "ui.playlists.loading" = "Loading Playlists";
 "ui.playlists.none_available" = "No Available Playlists";
 "ui.playlists.create_first" = "Create a playlist, then add your song.";
@@ -1518,14 +1518,14 @@
 "ui.cloud.uploading_music" = "Uploading Music";
 "ui.cloud.delete.confirmation" = "Delete from Cloud Drive?";
 "ui.cloud.delete_named" = "Delete “%@”";
-"ui.cloud.delete.message" = "This also deletes the Cloud Drive song from your NetEase Cloud Music account.";
+"ui.cloud.delete.message" = "This also deletes the Cloud Drive song from your QQ Music account.";
 "ui.cloud.error.title" = "Cloud Drive Operation Failed";
 "ui.cloud.loading" = "Loading Cloud Drive";
 "ui.cloud.uploading_foreground" = "Uploading music—keep Overtone in the foreground";
 "ui.cloud.total_song_count" = "%ld Songs Total";
 "ui.cloud.delete" = "Delete from Cloud Drive";
 "ui.cloud.empty" = "Cloud Drive Is Empty";
-"ui.cloud.empty.message" = "Upload local audio to play it in any NetEase Cloud Music client.";
+"ui.cloud.empty.message" = "Upload local audio to play it in any QQ Music client.";
 "ui.cloud.searching_all" = "Searching All Cloud Drive Songs";
 "ui.downloads.automatic_cache" = "Cache Automatically by Play Count";
 "ui.downloads.trigger_count" = "Trigger Count";
@@ -1541,7 +1541,7 @@
 "ui.recognition.preparing_microphone" = "Preparing Microphone";
 "ui.recognition.microphone_permission_message" = "Allow Overtone to access the microphone the first time you use this feature.";
 "ui.recognition.matching" = "Recognizing";
-"ui.recognition.matching_message" = "Generating an audio fingerprint and searching the NetEase Cloud Music catalog.";
+"ui.recognition.matching_message" = "Generating an audio fingerprint and searching the QQ Music catalog.";
 "ui.recognition.restart" = "Recognize Again";
 "ui.recognition.start" = "Start Recognition";
 "ui.recognition.listening" = "Listening";
@@ -1555,8 +1555,8 @@
 "ui.recognition.no_match_message" = "Move closer to the audio source, reduce ambient noise, extend the duration in Settings, or try Continuous Recognition.";
 "ui.recognition.try_again" = "Try Again";
 "ui.recognition.failed" = "Could Not Complete Recognition";
-"ui.recognition.ready.continuous" = "Move your iPhone close to music that is playing. Overtone keeps listening and showing recognition results until you stop it. Only an audio fingerprint generated on this device is sent to NetEase Cloud Music.";
-"ui.recognition.ready.limited" = "Move your iPhone close to music that is playing. Overtone listens for up to %@ and stops as soon as it finds a result. Only an audio fingerprint generated on this device is sent to NetEase Cloud Music.";
+"ui.recognition.ready.continuous" = "Move your iPhone close to music that is playing. Overtone keeps listening and showing recognition results until you stop it. Only an audio fingerprint generated on this device is sent to QQ Music.";
+"ui.recognition.ready.limited" = "Move your iPhone close to music that is playing. Overtone listens for up to %@ and stops as soon as it finds a result. Only an audio fingerprint generated on this device is sent to QQ Music.";
 "ui.recognition.error.microphone_permission" = "Microphone access is unavailable. Allow Overtone to use the microphone in System Settings.";
 "ui.recognition.error.microphone_unavailable" = "No microphone input is currently available.";
 "ui.recognition.error.recording_failed" = "Could not start recording: %@";
@@ -1599,7 +1599,7 @@
 "ui.podcasts.search_prompt" = "Search Podcast Episodes";
 "ui.podcasts.episode_order" = "Episode Order";
 "ui.podcasts.subscription_failed" = "Could Not Update Subscription";
-"ui.podcasts.login_to_subscribe" = "Sign in to NetEase Cloud Music before subscribing to podcasts.";
+"ui.podcasts.login_to_subscribe" = "Sign in to QQ Music before subscribing to podcasts.";
 "ui.podcasts.from" = "From";
 "ui.podcasts.episode_information" = "Episode Information";
 "ui.podcasts.episode_description" = "Episode Description";
@@ -1624,11 +1624,11 @@
 "ui.common.send" = "Send";
 "ui.common.optional" = "Optional";
 "ui.common.publish" = "Publish";
-"ui.error.netease_operation_incomplete" = "NetEase Cloud Music did not complete the operation.";
+"ui.error.netease_operation_incomplete" = "QQ Music did not complete the operation.";
 "ui.messages.start_private_message" = "New Private Message";
 "ui.messages.loading_private_messages" = "Loading Private Messages";
 "ui.messages.empty" = "No Private Messages";
-"ui.messages.empty.message" = "Messages sent through NetEase Cloud Music will appear here.";
+"ui.messages.empty.message" = "Messages sent through QQ Music will appear here.";
 "ui.messages.no_messages" = "No Messages Yet";
 "ui.messages.no_messages.message" = "Start the conversation by sending a message.";
 "ui.messages.send_failed" = "Could Not Send Message";
@@ -1643,8 +1643,8 @@
 "ui.messages.selected_recipient_count" = "%ld Selected";
 "ui.messages.private_send_failed" = "Could Not Send Private Message";
 "ui.messages.contacts_load_failed" = "Could Not Load Contacts";
-"ui.sharing.netease_private_message" = "NetEase Private Message";
-"ui.sharing.forward_to_feed" = "Share to NetEase Feed";
+"ui.sharing.netease_private_message" = "QQ Music Private Message";
+"ui.sharing.forward_to_feed" = "Share to QQ Music Feed";
 "ui.sharing.system_share" = "More Sharing Options";
 "ui.sharing.forwarded_content" = "Shared Content";
 "ui.sharing.say_something" = "Add a Comment";
@@ -1665,7 +1665,7 @@
 "ui.listen_together.join_room" = "Join Room";
 "ui.listen_together.invitation_requirements" = "Paste a Listen Together invitation link or room ID.";
 "ui.listen_together.login_required" = "Sign In Required";
-"ui.listen_together.login_message" = "Sign in to NetEase Cloud Music to create or join a room.";
+"ui.listen_together.login_message" = "Sign in to QQ Music to create or join a room.";
 "ui.listen_together.waiting_for_playback" = "Waiting for Playback";
 "ui.listen_together.room_sync" = "Room Synchronization";
 "ui.listen_together.room_members" = "Room Members";
@@ -1695,7 +1695,7 @@
 "ui.listen_together.room_ended" = "This Listen Together room has ended.";
 "ui.listen_together.members_title" = "Room Members";
 "ui.listen_together.no_shareable_song_hint" = "Start playing a shareable song before inviting friends.";
-"ui.common.netease_cloud_music" = "NetEase Cloud Music";
+"ui.common.netease_cloud_music" = "QQ Music";
 "ui.song.wiki.information" = "Encyclopedia Information";
 "ui.song.wiki.resource_count" = "%ld Items";
 "ui.song.wiki.first_listen" = "First Listen";
@@ -1745,7 +1745,7 @@
 "ui.desktop.mini_player" = "Mini Player";
 "ui.common.lyrics" = "Lyrics";
 "ui.common.login" = "Sign In";
-"ui.account.not_signed_in" = "Not Signed In to NetEase Cloud Music";
+"ui.account.not_signed_in" = "Not Signed In to QQ Music";
 "ui.desktop.settings.tab.general" = "General";
 "ui.desktop.settings.tab.features" = "Features";
 "ui.desktop.settings.tab.files" = "Files";
@@ -1761,7 +1761,7 @@
 "ui.desktop.settings.account.sign_in_message" = "Sign in to synchronize your complete library";
 "ui.desktop.settings.account.details" = "Account Details";
 "ui.desktop.settings.launch" = "Launch";
-"ui.desktop.settings.launch.clipboard" = "Recognize NetEase Links in the Clipboard at Launch";
+"ui.desktop.settings.launch.clipboard" = "Recognize QQ Music Links in the Clipboard at Launch";
 "ui.desktop.settings.quality_controls" = "Quality & Controls";
 "ui.desktop.settings.spatial_audio" = "Spatial Audio";
 "ui.desktop.settings.mode" = "Mode";
@@ -1785,7 +1785,7 @@
 "ui.desktop.settings.player_debug" = "Player Debugging";
 "ui.desktop.settings.maintenance" = "Maintenance";
 "ui.desktop.settings.show_onboarding_again" = "Show Welcome Dialog Again";
-"ui.desktop.settings.refresh_all_content" = "Refresh All NetEase Content";
+"ui.desktop.settings.refresh_all_content" = "Refresh All QQ Music Content";
 "ui.desktop.settings.privacy" = "Privacy";
 "ui.desktop.settings.privacy.message" = "Account cookies, the download library, and playback settings are stored only on this Mac. Song Recognition uploads only the audio fingerprint generated on this device.";
 "ui.desktop.lyrics.fixed.responsive_font_sizes" = "24 / 28 / 38 / 50 / 72 pt (by column width)";
@@ -1823,11 +1823,11 @@
 "ui.desktop.home.private_roaming.loading" = "Preparing Private Roaming";
 "ui.desktop.home.similar_songs.loading" = "Finding Similar Songs";
 "ui.desktop.home.daily_songs.empty" = "Try again later, or request a new set.";
-"ui.desktop.home.private_roaming.empty" = "NetEase Cloud Music has not returned any new roaming songs yet.";
-"ui.desktop.home.similar_songs.empty" = "NetEase Cloud Music could not find music similar to the current song.";
+"ui.desktop.home.private_roaming.empty" = "QQ Music has not returned any new roaming songs yet.";
+"ui.desktop.home.similar_songs.empty" = "QQ Music could not find music similar to the current song.";
 "ui.desktop.home.no_personalized_songs" = "No %@";
 "ui.desktop.home.sign_in_to_view" = "Sign In to View %@";
-"ui.desktop.home.account_generated_playlist" = "NetEase Cloud Music generates this playlist from your account preferences.";
+"ui.desktop.home.account_generated_playlist" = "QQ Music generates this playlist from your account preferences.";
 "ui.desktop.home.based_on_song" = "Based on “%@”";
 "ui.desktop.home.song_count_date" = "%ld Songs · %@";
 "ui.desktop.home.song_count_personalized" = "%ld Songs · Personalized";
@@ -1835,7 +1835,7 @@
 "ui.desktop.home.private_roaming.description" = "Explore music you may enjoy but have not heard yet.";
 "ui.desktop.home.similar_songs.description" = "Discover music in a similar style to the current song.";
 "ui.desktop.home.similar_songs.seed_description" = "Discover music similar to “%2$@” by %1$@.";
-"ui.desktop.home.no_available_recommendations" = "NetEase Cloud Music has not returned any available %@ songs.";
+"ui.desktop.home.no_available_recommendations" = "QQ Music has not returned any available %@ songs.";
 "ui.navigation.library.history" = "Recently Played";
 "ui.desktop.sidebar.loading_cloud_library" = "Loading Cloud Library";
 "ui.cloud.loading_more" = "Loading More Cloud Songs";
@@ -1847,24 +1847,24 @@
 "ui.desktop.onboarding.sign_in_later" = "Sign In Later";
 "ui.desktop.onboarding.welcome" = "Welcome";
 "ui.desktop.onboarding.configure" = "Set Up Overtone";
-"ui.desktop.onboarding.subtitle" = "A NetEase Cloud Music Player Built for Mac";
+"ui.desktop.onboarding.subtitle" = "A QQ Music Player Built for Mac";
 "ui.desktop.onboarding.feature.library" = "Complete Library";
 "ui.desktop.onboarding.feature.lyrics" = "Dynamic Lyrics";
 "ui.desktop.onboarding.feature.downloads_cloud" = "Downloads & Cloud Music";
 "ui.desktop.onboarding.recognition.default_duration" = "Default Duration";
 "ui.desktop.onboarding.recognition.privacy" = "Song Recognition sends only the audio fingerprint generated on this Mac.";
 "ui.desktop.onboarding.account.message" = "Sign in to synchronize favorites, playlists, podcasts, Cloud Music, playback history, private messages, and Listen Together. Signing in is not required to use Overtone.";
-"ui.desktop.onboarding.benefit.direct_api" = "Connects Directly to the Original NetEase Cloud Music APIs";
+"ui.desktop.onboarding.benefit.direct_api" = "Connects Directly to the Original QQ Music APIs";
 "ui.desktop.onboarding.benefit.independent_interfaces" = "Mobile and Desktop Interfaces and Settings Are Independent";
 "ui.desktop.about.version_build" = "Version %@ (%@)";
-"ui.desktop.about.copyright" = "© %ld Luoxi Collective.\nOvertone is an unofficial third-party NetEase Cloud Music client.";
+"ui.desktop.about.copyright" = "© %ld Luoxi Collective.\nOvertone is an unofficial third-party QQ Music client.";
 "ui.desktop.about.update_available.message" = "Current version: %@. Latest version: %@.";
-"ui.desktop.listen_together.welcome.message" = "Play, pause, song changes, progress, and the queue synchronize through a NetEase Listen Together room.";
+"ui.desktop.listen_together.welcome.message" = "Play, pause, song changes, progress, and the queue synchronize through a QQ Music Listen Together room.";
 "ui.desktop.listen_together.your_room" = "Room You Started";
 "ui.desktop.listen_together.friends_room" = "Joined a Friend’s Room";
-"ui.desktop.messages.login_message" = "Sign in to NetEase Cloud Music to read and send private messages.";
+"ui.desktop.messages.login_message" = "Sign in to QQ Music to read and send private messages.";
 "ui.desktop.messages.select_conversation" = "Select a Conversation";
-"ui.desktop.messages.select_conversation.message" = "Private messages with your NetEase friends appear here.";
+"ui.desktop.messages.select_conversation.message" = "Private messages with your QQ Music friends appear here.";
 "ui.desktop.messages.refresh" = "Refresh Private Messages";
 "ui.desktop.messages.conversations" = "Conversations";
 "ui.desktop.messages.load_failed" = "Could Not Load Private Messages";
@@ -1888,7 +1888,7 @@
 "ui.desktop.recognition.listening_message" = "Move your Mac close to the audio source and reduce ambient noise.";
 "ui.desktop.recognition.open_microphone_settings" = "Open Microphone Settings";
 "ui.desktop.recognition.ready.continuous" = "Overtone keeps listening and showing new results until you stop manually. The original recording is never uploaded.";
-"ui.desktop.recognition.ready.limited" = "Overtone listens for up to %@ and sends only the audio fingerprint generated on this Mac to NetEase Cloud Music.";
+"ui.desktop.recognition.ready.limited" = "Overtone listens for up to %@ and sends only the audio fingerprint generated on this Mac to QQ Music.";
 "ui.desktop.account.login_message" = "Sign in to synchronize favorites, playlists, podcasts, Cloud Music, playback history, private messages, and Listen Together. The sign-in cookie is stored only on this Mac.";
 "ui.desktop.account.settings" = "Account Settings";
 "ui.desktop.login.direct_connection" = "This page connects directly to music.163.com";
@@ -1970,11 +1970,11 @@
 "ui.desktop.library.empty" = "Nothing Here Yet";
 "ui.desktop.library.sign_in_title" = "Sign In to View Your Complete Library";
 "ui.desktop.library.empty.message" = "Music you favorite, play, or download in Overtone appears here.";
-"ui.desktop.library.sign_in_message" = "Use your NetEase Cloud Music account to synchronize favorites, podcasts, and Cloud Music.";
+"ui.desktop.library.sign_in_message" = "Use your QQ Music account to synchronize favorites, podcasts, and Cloud Music.";
 "ui.desktop.search.type" = "Type";
 "ui.desktop.search.failed" = "Search Failed";
 "ui.desktop.search.empty.title" = "Search Overtone";
-"ui.desktop.search.empty.message" = "Results come directly from the original NetEase Cloud Music APIs.";
+"ui.desktop.search.empty.message" = "Results come directly from the original QQ Music APIs.";
 "ui.desktop.search.searching" = "Searching";
 "ui.desktop.search.scope" = "Search Scope";
 "ui.desktop.home.action.starting" = "Starting %@";
@@ -2029,7 +2029,7 @@
 
 "ui.watch.account.connection_status" = "Connection Status";
 "ui.watch.account.import_iphone" = "Import from iPhone";
-"ui.watch.account.login_explanation" = "Sign in with a QR code, or import the NetEase Cloud Music account currently used by Overtone on your iPhone.";
+"ui.watch.account.login_explanation" = "Sign in with a QR code, or import the QQ Music account currently used by Overtone on your iPhone.";
 "ui.watch.account.qr_login" = "QR Code Sign-In";
 "ui.watch.account.sign_out" = "Sign Out";
 "ui.watch.account.source.iphone" = "Synced from iPhone";
@@ -2072,14 +2072,14 @@
 "ui.watch.daily.title" = "Daily Recommendations";
 
 "ui.watch.search.empty.description" = "Enter a song, artist, or album name.";
-"ui.watch.search.empty.title" = "Search NetEase Cloud Music";
+"ui.watch.search.empty.title" = "Search QQ Music";
 "ui.watch.search.failed" = "Search Failed";
 "ui.watch.search.prompt" = "Song, artist, or album";
 "ui.watch.search.searching" = "Searching";
 
 "ui.watch.playlists.load_failed" = "Could Not Load Playlists";
 "ui.watch.playlists.loading" = "Loading Playlists";
-"ui.watch.playlists.login_required" = "Sign in to NetEase Cloud Music first.";
+"ui.watch.playlists.login_required" = "Sign in to QQ Music first.";
 "ui.watch.playlists.mine" = "My Playlists";
 "ui.watch.playlists.songs_loading" = "Loading Songs";
 
@@ -2100,17 +2100,17 @@
 
 "ui.watch.now_playing.effective_quality" = "Current Effective Audio Quality";
 
-"ui.watch.qr.accessibility" = "NetEase Cloud Music Sign-In QR Code";
+"ui.watch.qr.accessibility" = "QQ Music Sign-In QR Code";
 "ui.watch.qr.expired_refreshing" = "QR code expired. Refreshing…";
 "ui.watch.qr.generating" = "Generating QR Code";
 "ui.watch.qr.generation_failed" = "Could Not Generate QR Code";
-"ui.watch.qr.instructions" = "Scan with the NetEase Cloud Music app on iPhone, then confirm.";
+"ui.watch.qr.instructions" = "Scan with the QQ Music app on iPhone, then confirm.";
 "ui.watch.qr.login_succeeded" = "Signed In";
 "ui.watch.qr.regenerate" = "Generate Again";
 "ui.watch.qr.scanned_confirm" = "Scanned. Confirm on iPhone.";
 "ui.watch.qr.status_check_failed" = "Could Not Check Sign-In Status";
 "ui.watch.qr.title" = "QR Code Sign-In";
-"ui.watch.qr.waiting_confirmation" = "Waiting for NetEase Cloud Music to Confirm";
+"ui.watch.qr.waiting_confirmation" = "Waiting for QQ Music to Confirm";
 "ui.watch.qr.waiting_scan" = "Waiting to Be Scanned";
 
 "ui.watch.lyrics.empty.description" = "Lyrics will appear here after you start playing a song.";
@@ -2133,7 +2133,7 @@
 "ui.release_notes.entry.apple_music_lyrics" = "Added a pixel-accurate Apple Music 26 lyrics style as the new default. The previous style remains available under Custom.";
 "ui.release_notes.entry.apple_music_background" = "Added a new player background faithfully based on Apple Music 26, available in Settings.";
 "ui.release_notes.entry.duet_lyrics" = "Added support for duet lyric presentation.";
-"ui.release_notes.entry.lyric_sources" = "Added automatic source selection and manual switching for NetEase Cloud Music, 99 Music, and AMLL lyrics.";
+"ui.release_notes.entry.lyric_sources" = "Added automatic source selection and manual switching for QQ Music, 99 Music, and AMLL lyrics.";
 "ui.release_notes.entry.cellular_quality" = "Added cellular streaming quality settings. Contributed by takoyakiwhite.";
 "ui.release_notes.entry.full_playlist" = "Fixed playlists adding only their first 100 songs.";
 "ui.release_notes.entry.artist_selection" = "Fixed artist navigation in the player offering only the first artist. Contributed by takoyakiwhite.";
@@ -2152,7 +2152,7 @@
 
 "ui.playlists.delete.title" = "Delete Playlist?";
 "ui.playlists.delete.action" = "Delete Playlist";
-"ui.playlists.delete.message" = "“%@” and its track list will be permanently deleted from your NetEase Cloud Music account.";
+"ui.playlists.delete.message" = "“%@” and its track list will be permanently deleted from your QQ Music account.";
 
 "ui.playlists.remove_song" = "Remove from Playlist";
 "ui.playlists.remove_song.message" = "Remove “%@” from this playlist?";
