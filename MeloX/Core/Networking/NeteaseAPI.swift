@@ -181,6 +181,7 @@ final class NeteaseAPI {
     }
 
     func albumSubscriptionStatus(id: Int) async throws -> Bool {
+        if QQMusicBackend.enabled { return try await qq.albumSubscriptionStatus(id: id) }
         let response: AlbumDynamicResponse = try await client.weapi(
             "/api/album/detail/dynamic",
             data: ["id": id]
@@ -190,6 +191,7 @@ final class NeteaseAPI {
     }
 
     func setAlbumSubscribed(id: Int, isSubscribed: Bool) async throws {
+        if QQMusicBackend.enabled { return try await qq.setAlbumSubscribed(id: id, isSubscribed: isSubscribed) }
         let path = isSubscribed ? "/api/album/sub" : "/api/album/unsub"
         let response: APIStatusResponse = try await client.weapi(
             path,
@@ -670,6 +672,7 @@ final class NeteaseAPI {
     }
 
     func userDetail(userID: Int) async throws -> AccountDetail {
+        if QQMusicBackend.enabled { return try await qq.userDetail(userID: userID) }
         let response: AccountDetailResponse
         do {
             // Mirrors @neteaseapireborn/api/module/user_detail.js.
