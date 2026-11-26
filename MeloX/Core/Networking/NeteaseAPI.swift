@@ -378,7 +378,7 @@ final class NeteaseAPI {
 
     func playbackSource(id: Int) async throws -> PlaybackSource {
         if QQMusicBackend.enabled { return try await qq.playbackSource(id: id) }
-        try await playbackSource(
+        return try await playbackSource(
             id: id,
             quality: playbackQuality,
             availability: .unknown
@@ -387,7 +387,7 @@ final class NeteaseAPI {
 
     func playbackSource(for song: Song) async throws -> PlaybackSource {
         if QQMusicBackend.enabled { return try await qq.playbackSource(for: song) }
-        try await playbackSource(
+        return try await playbackSource(
             id: song.id,
             quality: playbackQuality,
             availability: song.audioAvailability
@@ -531,7 +531,7 @@ final class NeteaseAPI {
 
     func songURL(id: Int) async throws -> URL {
         if QQMusicBackend.enabled { return try await qq.songURL(id: id) }
-        try await playbackSource(id: id).url
+        return try await playbackSource(id: id).url
     }
 
     func search(_ keywords: String, kind: SearchKind, limit: Int = 30) async throws -> SearchPayload {
