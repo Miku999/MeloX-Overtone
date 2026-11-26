@@ -13,6 +13,15 @@ struct NeteaseLoginView: View {
     }
 
     var body: some View {
+        if QQMusicBackend.enabled {
+            QQLoginView()
+        } else {
+            neteaseBody
+        }
+    }
+
+    @ViewBuilder
+    private var neteaseBody: some View {
         WebView(page)
             .webViewBackForwardNavigationGestures(.enabled)
             .overlay(alignment: .top) {
