@@ -66,7 +66,17 @@ final class LibraryStore {
     }
 
     var isLoggedIn: Bool {
-        !settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if QQMusicBackend.enabled { return QQAuthStore.isLoggedIn }
+        return !settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// 账号凭证标识。QQ 模式下用 `qq:<uin>` 代替网易云 Cookie，
+    /// 让缓存比对、刷新节流、内容持久化的判据继续成立。
+    private var accountToken: String {
+        if QQMusicBackend.enabled {
+            return QQAuthStore.isLoggedIn ? "qq:\(QQAuthStore.uin)" : ""
+        }
+        return settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var ownedPlaylists: [Playlist] {
@@ -164,7 +174,7 @@ final class LibraryStore {
     }
 
     func refresh(force: Bool = false) async {
-        let cookie = settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cookie = accountToken
         guard !cookie.isEmpty else {
             clearAccountData()
             return
@@ -371,7 +381,7 @@ final class LibraryStore {
 
     private func isCurrentRefresh(_ cookie: String) -> Bool {
         !Task.isCancelled && refreshingCookie == cookie
-            && settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines) == cookie
+            && accountToken == cookie
     }
 
     func loadMoreSubscribedPodcasts() async {
@@ -737,7 +747,7 @@ final class LibraryStore {
 
     private func persistContent() async {
         guard let profile,
-              loadedCookie == settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines) else {
+              loadedCookie == accountToken else {
             return
         }
         let snapshot = LibraryContentSnapshot(
