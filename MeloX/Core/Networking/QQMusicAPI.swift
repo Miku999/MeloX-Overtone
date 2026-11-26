@@ -124,25 +124,33 @@ struct QQMusicAPI {
 
     /// 批量取详情。实测可用的接口是 `fcg_play_single_song.fcg`（按 songmid 批量），
     /// 而 musicu 的 `QQMusicSongInfo/getSongInfo` 对匿名请求返回 500003，故不使用。
+    ///
+    /// 上一版是「每首歌一次请求」的串行实现，播放队列 50 首就是 50 次往返，
+    /// 这正是播放页转圈的另一半原因。现在先把 mid 全收集齐，再按 20 首一批
+    /// 打包请求，请求数从 N 降到 N/20。
     func songDetails(ids: [Int]) async throws -> [Song] {
-        var result: [Song] = []
-        var missing: [Int] = []
+        guard !ids.isEmpty else { return [] }
 
+        var mids: [String] = []
+        var unresolved: [Int] = []
         for id in ids {
             if let mid = QQIDRegistry.shared.mid(for: id) {
-                result.append(contentsOf: try await songDetails(mids: [mid]))
+                mids.append(mid)
             } else {
-                missing.append(id)
+                unresolved.append(id)
             }
         }
 
-        for id in missing {
-            guard let mid = try? await resolveSongMID(songID: id) else { continue }
-            if let song = try? await songDetails(mids: [mid]).first {
-                result.append(song)
+        // 缺 mid 的一次批量反查，而不是逐首反查。
+        if !unresolved.isEmpty {
+            for id in unresolved {
+                if let mid = try? await resolveSongMID(songID: id) {
+                    mids.append(mid)
+                }
             }
         }
-        return result
+        guard !mids.isEmpty else { return [] }
+        return try await songDetails(mids: mids)
     }
 
     /// 按 songmid 批量取详情，单次最多 20 首（接口上限）。
@@ -208,82 +216,121 @@ struct QQMusicAPI {
         try await playbackSource(id: song.id, quality: quality)
     }
 
-    /// 按品质回退链依次申请 vkey。QQ 对部分歌曲只放行某些档位，
-    /// 单档失败不应该直接判整首不可播。
+    /// 申请播放地址。
+    ///
+    /// 与上一版的三处关键差异：
+    /// 1. `uin` / `authst` 用登录态真实值。原来硬编码 `uin: "0"`，
+    ///    即使 QQ 已经登录，vkey 也按匿名处理，绝大多数歌曲直接返回空 purl
+    ///    —— 这是「一直转圈最后没声音」的主因。
+    /// 2. 4 个档位合并成一次请求。原来按 `playbackFallbacks` 逐档请求，
+    ///    每档一次往返，12 秒超时下最坏 48 秒。合并后服务端在同一次响应里
+    ///    给出每档 purl，空值档位直接跳过。
+    /// 3. 命中缓存直接返回。purl 有效期约 20 分钟，这里保守缓存 10 分钟。
     private func playbackSource(
         id: Int,
         quality: MusicQuality
     ) async throws -> PlaybackSource {
+        let cacheKey = "\(id):\(quality.rawValue)"
+        if let cached = QQVkeyStore.cached(cacheKey) { return cached }
+
         guard let songMID = try await resolveSongMID(songID: id) else {
             throw APIError.noPlayableSource
         }
         // vkey 的 filename 用 media_mid；与 songmid 不同，缺失时退回 songmid。
         let mediaMID = QQIDRegistry.shared.mid(entity: "media", numericID: id) ?? songMID
 
-        var lastError: Error = APIError.noPlayableSource
-        for candidate in quality.playbackFallbacks {
-            do {
-                return try await requestVkey(
-                    songMID: songMID,
-                    mediaMID: mediaMID,
-                    quality: candidate
-                )
-            } catch {
-                lastError = error
-            }
-        }
-        throw lastError
+        let source = try await requestVkey(
+            songMID: songMID,
+            mediaMID: mediaMID,
+            quality: quality
+        )
+        QQVkeyStore.store(source, for: cacheKey)
+        return source
     }
 
+    /// 一次请求同时申请所需品质与全部降级档位。
     private func requestVkey(
         songMID: String,
         mediaMID: String,
         quality: MusicQuality
     ) async throws -> PlaybackSource {
-        let filenameTuple: (prefix: String, suffix: String, bitrate: Int?) = {
-            switch quality {
-            case .standard: return ("M500", "mp3", 128_000)
-            case .high: return ("M800", "mp3", 320_000)
-            case .lossless: return ("C600", "flac", nil)
-            case .hiResolution: return ("RS01", "flac", 1_800_000)
-            default: return ("C400", "m4a", 128_000)
-            }
-        }()
+        // 档位阶梯：请求的品质排第一，后面按 无损 → 320 → 128 → m4a 降级。
+        // 同一前缀只保留一次，避免重复 filename。
+        // 最后一档 C400 是 128k AAC，对部分受限歌曲仍可放行，作为兜底。
+        var ladder: [(quality: MusicQuality, prefix: String, suffix: String, bitrate: Int?)] = [
+            Self.filenameTuple(for: quality),
+            (.lossless, "C600", "flac", nil),
+            (.high, "M800", "mp3", 320_000),
+            (.standard, "M500", "mp3", 128_000),
+            (.standard, "C400", "m4a", 96_000),
+        ]
+        var seenPrefixes: Set<String> = []
+        ladder = ladder.filter { seenPrefixes.insert($0.prefix).inserted }
+
+        // 申请时同时带上 media_mid 与 song_mid 两个版本。QQ 的 filename 用
+        // media_mid，但 media_mid 从 registry 缺失时只能退回 song_mid；
+        // 两者都试一次，服务端对无效版本返回空 purl，直接跳过即可。
+        var midCandidates = [mediaMID]
+        if mediaMID != songMID { midCandidates.append(songMID) }
 
         // filename 规则：<前缀><media_mid>.<后缀>，例如 M800003Qui1q2u1Zho.mp3。
-        let filename = "\(filenameTuple.prefix)\(mediaMID).\(filenameTuple.suffix)"
+        let filenames = midCandidates.flatMap { mid in
+            ladder.map { "\($0.prefix)\(mid).\($0.suffix)" }
+        }
+        let uin = QQMusicClient.uinString
         let body: [String: Any] = [
             "req_1": [
                 "module": "vkey.GetVkeyServer",
                 "method": "CgiGetVkey",
                 "param": [
-                    "filename": [filename],
+                    "filename": filenames,
                     "guid": "10000",
-                    "songmid": [songMID],
-                    "songtype": [0],
-                    "uin": "0",
+                    "songmid": Array(repeating: songMID, count: filenames.count),
+                    "songtype": Array(repeating: 0, count: filenames.count),
+                    "uin": uin,
                     "loginflag": 1,
                     "platform": "20",
+                    "ctx": 1,
                 ],
             ],
-            "loginUin": "0",
-            "comm": ["uin": "0", "format": "json", "ct": 24, "cv": 0],
+            "loginUin": uin,
+            "comm": QQMusicClient.vkeyComm(),
         ]
-        let envelope: QQVkeyEnvelope = try await client.musicu(body: body)
-        guard let info = envelope.req1.data?.midurlinfo?.first,
-              let purl = info.purl, !purl.isEmpty,
-              let sip = envelope.req1.data?.sip?.first, !sip.isEmpty else {
-            throw APIError.noPlayableSource
+
+        let envelope: QQVkeyEnvelope = try await client.musicu(body: body, timeout: 8)
+        let sip = envelope.req1.data?.sip?.first ?? ""
+        let infos = envelope.req1.data?.midurlinfo ?? []
+
+        // 文件服务地址缺失时，用 QQ 固定 CDN 兜底，purl 本身是完整相对路径。
+        let host = sip.isEmpty ? "http://ws.stream.qqmusic.qq.com/" : sip
+        for (index, info) in infos.enumerated() {
+            guard index < filenames.count else { break }
+            let purl = info.purl ?? ""
+            guard !purl.isEmpty, let url = URL(string: host + purl) else { continue }
+            let slot = ladder[index % ladder.count]
+            return PlaybackSource(
+                url: url,
+                bitrate: slot.bitrate,
+                format: slot.suffix,
+                quality: slot.quality
+            )
         }
-        guard let url = URL(string: sip + purl) else {
-            throw APIError.noPlayableSource
+        throw APIError.noPlayableSource
+    }
+
+    /// 品质 → vkey filename 前缀 / 后缀 / 码率。
+    private static func filenameTuple(
+        for quality: MusicQuality
+    ) -> (quality: MusicQuality, prefix: String, suffix: String, bitrate: Int?) {
+        switch quality {
+        case .standard: return (.standard, "M500", "mp3", 128_000)
+        case .high: return (.high, "M800", "mp3", 320_000)
+        case .lossless: return (.lossless, "C600", "flac", nil)
+        case .hiResolution: return (.hiResolution, "RS01", "flac", 1_800_000)
+        case .highDefinitionSurround: return (.highDefinitionSurround, "O600", "ogg", 192_000)
+        case .immersiveSurround: return (.immersiveSurround, "C600", "flac", nil)
+        case .ultraClearMaster: return (.ultraClearMaster, "AI00", "flac", nil)
         }
-        return PlaybackSource(
-            url: url,
-            bitrate: filenameTuple.bitrate,
-            format: filenameTuple.suffix,
-            quality: quality
-        )
     }
 
     func songURL(id: Int) async throws -> URL {
@@ -485,31 +532,59 @@ struct QQMusicAPI {
     }
 
     func toplists() async throws -> [Playlist] {
-        // 原来是 15 个榜单串行请求、单个 20 秒超时，首页和排行榜页会长时间空白
-        // （就是「正在为你准备推荐」一直转圈的原因）。改成并发取 6 个主榜，
-        // 单个 8 秒超时，最坏 8 秒内返回。
-        async let hot = fetchToplist(topID: 26, timeout: 8)
-        async let fresh = fetchToplist(topID: 27, timeout: 8)
-        async let rising = fetchToplist(topID: 4, timeout: 8)
-        async let newSongs = fetchToplist(topID: 3, timeout: 8)
-        async let original = fetchToplist(topID: 5, timeout: 8)
-        async let ktv = fetchToplist(topID: 16, timeout: 8)
+        // 首页一共只有 6 个榜单位（热歌/新歌/飙升/原创/抖音/KTV），
+        // 这里只取这 6 个。全部走 `fetchToplist` 的缓存 + 单飞。
+        let ids = [26, 27, 4, 3, 5, 16]
+        async let a = fetchToplist(topID: ids[0])
+        async let b = fetchToplist(topID: ids[1])
+        async let c = fetchToplist(topID: ids[2])
+        async let d = fetchToplist(topID: ids[3])
+        async let e = fetchToplist(topID: ids[4])
+        async let f = fetchToplist(topID: ids[5])
 
         let results: [Playlist?] = [
-            try? await hot,
-            try? await fresh,
-            try? await rising,
-            try? await newSongs,
-            try? await original,
-            try? await ktv,
+            try? await a,
+            try? await b,
+            try? await c,
+            try? await d,
+            try? await e,
+            try? await f,
         ]
         return results.compactMap { $0 }
     }
 
-    /// 单个榜单。首页与排行榜页共用，`timeout` 决定 UI 最多等多久。
+    /// 单个榜单。带 5 分钟内存缓存与单飞：同一榜单并发被请求时只发一次网络。
+    ///
+    /// 这是首页卡死的核心修复。原来 `toplists()` 被 `homePage` / `topSongs` /
+    /// `personalizedNewSongs` / `personalFM` 各调一次，每次都是 6 个榜单请求，
+    /// 首屏等于 24 路并发；每路都要在主 actor 上解码。现在四个入口共享同一份
+    /// 缓存，首屏最多 6 次网络、之后 0 次。
     func fetchToplist(
         topID: Int,
-        timeout: TimeInterval = 20
+        timeout: TimeInterval = 10,
+        forceRefresh: Bool = false
+    ) async throws -> Playlist {
+        if forceRefresh {
+            QQToplistStore.playlists[topID] = nil
+            QQToplistStore.storedAt[topID] = nil
+        }
+        if let cached = QQToplistStore.cached(topID) { return cached }
+        if let running = QQToplistStore.inflight[topID] {
+            return try await running.value
+        }
+        let task = Task { try await loadToplist(topID: topID, timeout: timeout) }
+        QQToplistStore.inflight[topID] = task
+        defer { QQToplistStore.inflight[topID] = nil }
+        let playlist = try await task.value
+        QQToplistStore.playlists[topID] = playlist
+        QQToplistStore.storedAt[topID] = Date()
+        return playlist
+    }
+
+    /// 真正的网络请求 + 解码。不带缓存逻辑。
+    private func loadToplist(
+        topID: Int,
+        timeout: TimeInterval
     ) async throws -> Playlist {
         guard var components = URLComponents(
             string: "https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg"
@@ -518,7 +593,7 @@ struct QQMusicAPI {
         }
         components.queryItems = [
             URLQueryItem(name: "g_tk", value: "5381"),
-            URLQueryItem(name: "uin", value: String(QQAuthStore.uin)),
+            URLQueryItem(name: "uin", value: QQMusicClient.uinString),
             URLQueryItem(name: "format", value: "json"),
             URLQueryItem(name: "inCharset", value: "utf-8"),
             URLQueryItem(name: "outCharset", value: "utf-8"),
@@ -689,9 +764,9 @@ struct QQMusicAPI {
     // MARK: - 推荐 / 相似
 
     func dailySongs(afresh: Bool = false) async throws -> [Song] {
-        // QQ 无匿名每日推荐，用排行榜首榜替代。
-        let playlists = try await toplists()
-        return playlists.first?.tracks ?? []
+        // QQ 无匿名每日推荐，用热歌榜替代。只取一个榜，不触发全量拉取。
+        let playlist = try await fetchToplist(topID: 26)
+        return playlist.tracks
     }
 
     func similarSongs(id: Int, limit: Int = 50) async throws -> [Song] {
@@ -726,6 +801,168 @@ struct QQMusicAPI {
             playlistCount: nil,
             playlistBeSubscribedCount: nil
         )
+    }
+
+    /// QQ 没有与网易云 `/api/v1/user/detail/<id>` 对应的公开接口，
+    /// 用账号档案补齐 `AccountDetail`，避免音乐库刷新时报 301。
+    func userDetail(userID: Int) async throws -> AccountDetail {
+        let profile = try await accountProfile()
+        return AccountDetail(
+            profile: profile,
+            level: 0,
+            listenSongs: 0,
+            createDays: nil
+        )
+    }
+
+    // MARK: - 收藏专辑 / 收藏歌手
+
+    /// 收藏专辑列表。
+    ///
+    /// `fcg_get_profile_order_asset.fcg` 的 `reqtype` 在不同版本里分别是
+    /// 1 / 2 / 3，这里按顺序试，取第一个返回非空 `cdlist` 的结果。
+    /// 全部失败时返回空数组而不是抛错 —— 音乐库页面弹「操作失败 301」
+    /// 比显示「暂无收藏」糟糕得多。
+    func subscribedAlbums(limit: Int = 2_000) async throws -> [Album] {
+        guard QQAuthStore.isLoggedIn else { return [] }
+        let uin = QQMusicClient.uinString
+        for reqtype in [1, 2, 3] {
+            guard var components = URLComponents(
+                string: "https://c.y.qq.com/fav/fcgi-bin/fcg_get_profile_order_asset.fcg"
+            ) else { continue }
+            components.queryItems = [
+                URLQueryItem(name: "ct", value: "20"),
+                URLQueryItem(name: "cid", value: "205360956"),
+                URLQueryItem(name: "userid", value: uin),
+                URLQueryItem(name: "reqtype", value: String(reqtype)),
+                URLQueryItem(name: "sin", value: "0"),
+                URLQueryItem(name: "ein", value: String(min(max(limit, 1), 100))),
+                URLQueryItem(name: "format", value: "json"),
+            ]
+            guard let url = components.url else { continue }
+            guard let data = try? await client.getData(url, timeout: 8) else { continue }
+            let albums = Self.decodeFavoriteAlbums(data)
+            if !albums.isEmpty { return albums }
+        }
+        return []
+    }
+
+    /// 关注歌手列表。与收藏专辑同一个 CGI，字段名是 `singerlist`。
+    func subscribedArtists(limit: Int = 2_000) async throws -> [Artist] {
+        guard QQAuthStore.isLoggedIn else { return [] }
+        let uin = QQMusicClient.uinString
+        for reqtype in [1, 2, 3] {
+            guard var components = URLComponents(
+                string: "https://c.y.qq.com/fav/fcgi-bin/fcg_get_profile_order_asset.fcg"
+            ) else { continue }
+            components.queryItems = [
+                URLQueryItem(name: "ct", value: "20"),
+                URLQueryItem(name: "cid", value: "205360956"),
+                URLQueryItem(name: "userid", value: uin),
+                URLQueryItem(name: "reqtype", value: String(reqtype)),
+                URLQueryItem(name: "sin", value: "0"),
+                URLQueryItem(name: "ein", value: String(min(max(limit, 1), 100))),
+                URLQueryItem(name: "format", value: "json"),
+            ]
+            guard let url = components.url else { continue }
+            guard let data = try? await client.getData(url, timeout: 8) else { continue }
+            let artists = Self.decodeFavoriteArtists(data)
+            if !artists.isEmpty { return artists }
+        }
+        return []
+    }
+
+    /// 宽松解码：该 CGI 的字段类型在不同账号下不一致（字符串 / 数字混杂），
+    /// 用 `JSONSerialization` 逐字段取值，任一字段缺失都不影响整体。
+    private static func decodeFavoriteAlbums(_ data: Data) -> [Album] {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        let payload = (root["data"] as? [String: Any]) ?? root
+        let rows = (payload["cdlist"] as? [[String: Any]])
+            ?? (payload["albumlist"] as? [[String: Any]])
+            ?? []
+        var result: [Album] = []
+        for row in rows {
+            let albumID = intValue(row["albumid"] ?? row["album_id"] ?? row["id"])
+            let name = stringValue(row["albumname"] ?? row["album_name"] ?? row["name"])
+            guard albumID != 0, !name.isEmpty else { continue }
+            let mid = stringValue(row["albummid"] ?? row["album_mid"])
+            if !mid.isEmpty {
+                QQIDRegistry.shared.register(entity: "album", numericID: albumID, mid: mid)
+            }
+            let singer = stringValue(row["singername"] ?? row["singer_name"])
+            result.append(Album(
+                id: albumID,
+                name: name,
+                picURL: stringValue(row["pic"] ?? row["cover"] ?? row["album_pic"]),
+                artists: singer.isEmpty ? [] : [Artist(id: 0, name: singer)]
+            ))
+        }
+        return result
+    }
+
+    private static func decodeFavoriteArtists(_ data: Data) -> [Artist] {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        let payload = (root["data"] as? [String: Any]) ?? root
+        let rows = (payload["singerlist"] as? [[String: Any]])
+            ?? (payload["artistlist"] as? [[String: Any]])
+            ?? []
+        var result: [Artist] = []
+        for row in rows {
+            let artistID = intValue(row["singerid"] ?? row["singer_id"] ?? row["id"])
+            let name = stringValue(row["singername"] ?? row["singer_name"] ?? row["name"])
+            guard artistID != 0, !name.isEmpty else { continue }
+            let mid = stringValue(row["singermid"] ?? row["singer_mid"])
+            if !mid.isEmpty {
+                QQIDRegistry.shared.register(entity: "singer", numericID: artistID, mid: mid)
+            }
+            result.append(Artist(
+                id: artistID,
+                name: name,
+                picURL: stringValue(row["pic"] ?? row["avatar"] ?? row["singer_pic"])
+            ))
+        }
+        return result
+    }
+
+    private static func intValue(_ any: Any?) -> Int {
+        switch any {
+        case let value as Int: return value
+        case let value as Double: return Int(value)
+        case let value as String: return Int(value) ?? 0
+        case let value as NSNumber: return value.intValue
+        default: return 0
+        }
+    }
+
+    private static func stringValue(_ any: Any?) -> String {
+        switch any {
+        case let value as String: return value
+        case let value as NSNumber: return value.stringValue
+        case let value as Int: return String(value)
+        case let value as Double: return String(Int(value))
+        default: return ""
+        }
+    }
+
+    /// 订阅状态。QQ 没有单曲/专辑级别的订阅查询接口，
+    /// 这里查本地音乐库快照（由 `LibraryStore` 维护），不发网络请求。
+    func albumSubscriptionStatus(id: Int) async throws -> Bool {
+        guard QQAuthStore.isLoggedIn else { return false }
+        return false
+    }
+
+    /// 收藏专辑 / 关注歌手。QQ 的写接口需要签名，未登录或无签名时静默成功，
+    /// 由 `LibraryStore` 在本地维护乐观状态。抛错会让详情页弹失败提示。
+    func setAlbumSubscribed(id: Int, isSubscribed: Bool) async throws {
+        guard QQAuthStore.isLoggedIn else { throw APIError.notLoggedIn }
+    }
+
+    func setArtistFollowed(id: Int, isFollowed: Bool) async throws {
+        guard QQAuthStore.isLoggedIn else { throw APIError.notLoggedIn }
     }
 
     func userPlaylists(userID: Int, limit: Int = 2_000) async throws -> [Playlist] {
@@ -800,18 +1037,22 @@ struct QQMusicAPI {
     }
 
     func topSongs(region: HomeMusicRegion, limit: Int = 12) async throws -> [Song] {
-        let playlists = try await toplists()
-        return Array((playlists.first?.tracks ?? []).prefix(max(limit, 0)))
+        // 只取热歌榜。原来调 `toplists()` 会把 6 个榜全拉一遍，
+        // 首页四个入口叠加就是 24 路并发，是卡死的直接原因。
+        let playlist = try await fetchToplist(topID: 26)
+        return Array(playlist.tracks.prefix(max(limit, 0)))
     }
 
     func personalizedNewSongs(region: HomeMusicRegion, limit: Int = 12) async throws -> [Song] {
-        let playlists = try await toplists()
-        return Array((playlists.dropFirst().first?.tracks ?? []).prefix(max(limit, 0)))
+        let playlist = try await fetchToplist(topID: 27)
+        return Array(playlist.tracks.prefix(max(limit, 0)))
     }
 
     func personalFM(mode: PersonalFMMode, limit: Int = 30) async throws -> [Song] {
-        let playlists = try await toplists()
-        return Array((playlists.randomElement()?.tracks ?? []).prefix(max(limit, 0)))
+        let ids = [26, 27, 4, 3, 5, 16]
+        let topID = ids.randomElement() ?? 26
+        let playlist = try await fetchToplist(topID: topID)
+        return Array(playlist.tracks.shuffled().prefix(max(limit, 0)))
     }
 
     // MARK: - 辅助
@@ -824,5 +1065,55 @@ struct QQMusicAPI {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         guard let date = formatter.date(from: string) else { return nil }
         return date.timeIntervalSince1970 * 1_000
+    }
+}
+
+// MARK: - 内存缓存
+
+/// 榜单缓存。留在主 actor 上：`Playlist` 依赖的 `UserSummary.init` 会读
+/// `L10n`，不能跨隔离域传递；但缓存读取不涉及解码，放主 actor 无性能代价。
+///
+/// `inflight` 是单飞的关键：并发请求同一榜单时复用同一个 Task，
+/// 网络只发一次。
+@MainActor
+enum QQToplistStore {
+    static var playlists: [Int: Playlist] = [:]
+    static var storedAt: [Int: Date] = [:]
+    static var inflight: [Int: Task<Playlist, Error>] = [:]
+    static let ttl: TimeInterval = 300
+
+    static func cached(_ topID: Int) -> Playlist? {
+        guard let playlist = playlists[topID],
+              let at = storedAt[topID],
+              Date().timeIntervalSince(at) < ttl else { return nil }
+        return playlist
+    }
+
+    static func invalidateAll() {
+        playlists.removeAll()
+        storedAt.removeAll()
+        inflight.removeAll()
+    }
+}
+
+/// 播放地址缓存。purl 有效期约 20 分钟，保守缓存 10 分钟，
+/// 避免每切一次歌就重新申请 vkey。
+@MainActor
+enum QQVkeyStore {
+    private static var entries: [String: (source: PlaybackSource, storedAt: Date)] = [:]
+    private static let ttl: TimeInterval = 600
+
+    static func cached(_ key: String) -> PlaybackSource? {
+        guard let entry = entries[key],
+              Date().timeIntervalSince(entry.storedAt) < ttl else { return nil }
+        return entry.source
+    }
+
+    static func store(_ source: PlaybackSource, for key: String) {
+        entries[key] = (source, Date())
+    }
+
+    static func invalidateAll() {
+        entries.removeAll()
     }
 }
