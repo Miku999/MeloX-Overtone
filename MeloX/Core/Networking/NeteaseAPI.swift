@@ -66,7 +66,7 @@ final class NeteaseAPI {
     let pageContentCache: PageContentCache
 
     @ObservationIgnored
-    private let qq = QQMusicAPI()
+    let qq = QQMusicAPI()
 
     private var playbackQuality: MusicQuality {
         isCellularData ? settings.cellularQuality : settings.quality
