@@ -14,6 +14,54 @@ nonisolated struct LibraryAlbumIndex {
         let sort: LibraryAlbumSort
         let query: String
         let locale: Locale
+
+        init(
+            subscribed: [Album],
+            songs: [Song],
+            songDates: [Int: Date],
+            downloads: [DownloadedSong],
+            filter: LibrarySongFilter,
+            sort: LibraryAlbumSort,
+            query: String,
+            locale: Locale,
+            favoritesRevision: Int = 0
+        ) {
+            self.subscribed = subscribed
+            self.songs = songs
+            self.songDates = songDates
+            self.downloads = downloads
+            self.filter = filter
+            self.sort = sort
+            self.query = query
+            self.locale = locale
+            self.favoritesRevision = favoritesRevision
+            self.subscribedCount = subscribed.count
+            self.subscribedFirstID = subscribed.first?.id
+            self.songsCount = songs.count
+            self.songsFirstID = songs.first?.id
+        }
+
+        /// O(1) 指纹。合成的 `Equatable` 会把 `songs` 里两千多首 `Song`
+        /// 的每个字符串字段都比一遍，而 `value(for:)` 在 `body` 里被反复调用。
+        private let favoritesRevision: Int
+        private let subscribedCount: Int
+        private let subscribedFirstID: Int?
+        private let songsCount: Int
+        private let songsFirstID: Int?
+
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.filter == rhs.filter
+                && lhs.sort == rhs.sort
+                && lhs.query == rhs.query
+                && lhs.locale.identifier == rhs.locale.identifier
+                && lhs.songDates.count == rhs.songDates.count
+                && lhs.downloads.count == rhs.downloads.count
+                && lhs.subscribedCount == rhs.subscribedCount
+                && lhs.subscribedFirstID == rhs.subscribedFirstID
+                && lhs.songsCount == rhs.songsCount
+                && lhs.songsFirstID == rhs.songsFirstID
+                && lhs.favoritesRevision == rhs.favoritesRevision
+        }
     }
 
     struct Entry: Identifiable {

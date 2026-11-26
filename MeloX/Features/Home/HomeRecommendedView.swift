@@ -75,7 +75,7 @@ struct HomeRecommendedView: View {
                     settings.isContentFeatureEnabled(.podcasts),
                 favoritePlaylistIDs:
                     library.favoritePlaylists.map(\.id),
-                likedSongID: library.favoriteSongs.first?.id
+                likedSongID: library.firstFavoriteSongID
             )
         ) {
             await loadFallbacks()

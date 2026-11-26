@@ -11,7 +11,8 @@ struct LibraryArtistsView: View {
         let request = ArtistIndexRequest(
             followed: library.favoriteArtists, albums: library.favoriteAlbums, songs: library.favoriteSongs,
             downloads: AppFeatureAvailability.downloads ? downloads.downloadedSongs : [], filter: filter,
-            query: normalizedLibrarySearchQuery(searchQuery), locale: locale
+            query: normalizedLibrarySearchQuery(searchQuery), locale: locale,
+            favoritesRevision: library.favoriteSongsRevision
         )
         let cached = library.artistIndex.value(for: request)
         let sections = cached ?? []
@@ -31,7 +32,10 @@ struct LibraryArtistsView: View {
                                 }
                             }
                         }
-                        .musicMatchedTransitionSource(for: .artist(artist.id))
+                        .musicMatchedTransitionSource(
+                            for: .artist(artist.id),
+                            prefetchArtworkAssets: false
+                        )
                         .listRowInsets(.init(top: 4, leading: 20, bottom: 4, trailing: 16))
                         .alignmentGuide(.listRowSeparatorLeading) { _ in 60 }
                     }
@@ -83,6 +87,52 @@ nonisolated struct ArtistIndexRequest: Equatable {
     let filter: LibrarySongFilter
     let query: String
     let locale: Locale
+
+    init(
+        followed: [Artist],
+        albums: [Album],
+        songs: [Song],
+        downloads: [Song],
+        filter: LibrarySongFilter,
+        query: String,
+        locale: Locale,
+        favoritesRevision: Int = 0
+    ) {
+        self.followed = followed
+        self.albums = albums
+        self.songs = songs
+        self.downloads = downloads
+        self.filter = filter
+        self.query = query
+        self.locale = locale
+        self.favoritesRevision = favoritesRevision
+        self.followedCount = followed.count
+        self.followedFirstID = followed.first?.id
+        self.songsCount = songs.count
+        self.songsFirstID = songs.first?.id
+        self.albumsCount = albums.count
+    }
+
+    /// O(1) 指纹，避免每次 `body` 求值都深比较两千多首 `Song`。
+    private let favoritesRevision: Int
+    private let followedCount: Int
+    private let followedFirstID: Int?
+    private let songsCount: Int
+    private let songsFirstID: Int?
+    private let albumsCount: Int
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.filter == rhs.filter
+            && lhs.query == rhs.query
+            && lhs.locale.identifier == rhs.locale.identifier
+            && lhs.downloads.count == rhs.downloads.count
+            && lhs.followedCount == rhs.followedCount
+            && lhs.followedFirstID == rhs.followedFirstID
+            && lhs.songsCount == rhs.songsCount
+            && lhs.songsFirstID == rhs.songsFirstID
+            && lhs.albumsCount == rhs.albumsCount
+            && lhs.favoritesRevision == rhs.favoritesRevision
+    }
 
     @concurrent func build() async throws -> [ArtistSection] {
         let favoriteIDs = Set(followed.map(\.id))

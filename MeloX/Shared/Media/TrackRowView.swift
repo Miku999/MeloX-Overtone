@@ -15,8 +15,10 @@ struct TrackRowView: View {
     /// 列表行里关掉封面「详情资产」预取：每行各下一份图、各做一次高斯模糊
     /// 与取色，2592 行的收藏列表滚动时会把主线程和网络全部占住。
     var prefetchesTransitionArtwork = false
-    /// 长列表里注册 zoom 转场源本身也有开销，收藏列表这类超大列表关掉。
-    var usesCardTransition = true
+    /// 长列表里注册 zoom 转场源本身也有开销：`matchedTransitionSource` 要在
+    /// UIKit 层为每一行登记一个可匹配源，几百行以上会在滚动时持续消耗主线程。
+    /// 默认关闭，只有确认行数很少的短列表才显式打开。
+    var usesCardTransition = false
     var playAction: (() -> Void)?
 
     @State private var presentedSheet: TrackRowSheet?

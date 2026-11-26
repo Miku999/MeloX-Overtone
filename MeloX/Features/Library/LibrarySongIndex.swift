@@ -31,7 +31,8 @@ nonisolated struct LibrarySongIndex {
             filter: LibrarySongFilter,
             sort: LibrarySongSort,
             query: String,
-            locale: Locale
+            locale: Locale,
+            favoritesRevision: Int = 0
         ) {
             self.favorites = favorites
             self.favoriteDates = favoriteDates
@@ -40,30 +41,25 @@ nonisolated struct LibrarySongIndex {
             self.sort = sort
             self.query = query
             self.locale = locale
-            self.favoritesFingerprint = Self.fingerprint(of: favorites)
+            self.favoritesRevision = favoritesRevision
+            self.favoriteCount = favorites.count
+            self.favoriteFirstID = favorites.first?.id
+            self.favoriteLastID = favorites.last?.id
         }
 
-        /// 收藏曲目的轻量指纹。
+        /// 收藏列表的 O(1) 指纹。
         ///
         /// `Song` 的 `Equatable` 是逐字段合成的（含 `artists`、`album` 里的字符串），
         /// 2592 首直接比较一次要几毫秒；而 SwiftUI 的 `body`、`.task(id:)`
-        /// 在滚动时反复求值，累加起来就是整机掉帧。这里只比首尾各 6 个 id：
-        /// 收藏/取消收藏会改顺序或改条数，必然反映到指纹上。
-        private let favoritesFingerprint: String?
-
-        private static func fingerprint(of songs: [Song]) -> String? {
-            guard !songs.isEmpty else { return nil }
-            var parts: [String] = []
-            parts.reserveCapacity(16)
-            parts.append(String(songs.count))
-            for song in songs.prefix(6) {
-                parts.append(String(song.id))
-            }
-            for song in songs.suffix(6) {
-                parts.append(String(song.id))
-            }
-            return parts.joined(separator: ",")
-        }
+        /// 每次求值都要比一次，滚动时累加起来就是整机掉帧。
+        ///
+        /// 现在只用「变更版本号 + 条数 + 首尾 id」这四项，全部在 `init` 里 O(1) 取出。
+        /// 之前那版会在 `init` 里拼一个 12 个 id 的字符串，`body` 求值频率一高
+        /// 就是纯浪费，这里也一并去掉。
+        private let favoritesRevision: Int
+        private let favoriteCount: Int
+        private let favoriteFirstID: Int?
+        private let favoriteLastID: Int?
 
         static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.filter == rhs.filter
@@ -72,7 +68,10 @@ nonisolated struct LibrarySongIndex {
                 && lhs.locale.identifier == rhs.locale.identifier
                 && lhs.downloads.count == rhs.downloads.count
                 && lhs.favoriteDates.count == rhs.favoriteDates.count
-                && lhs.favoritesFingerprint == rhs.favoritesFingerprint
+                && lhs.favoriteCount == rhs.favoriteCount
+                && lhs.favoriteFirstID == rhs.favoriteFirstID
+                && lhs.favoriteLastID == rhs.favoriteLastID
+                && lhs.favoritesRevision == rhs.favoritesRevision
         }
     }
 

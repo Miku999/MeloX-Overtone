@@ -19,7 +19,8 @@ struct LibraryAlbumsView: View {
     private var request: LibraryAlbumIndex.Request {
         .init(subscribed: library.favoriteAlbums, songs: library.favoriteSongs,
               songDates: library.favoriteAddedDates, downloads: AppFeatureAvailability.downloads ? downloads.downloads : [],
-              filter: filter, sort: sort, query: normalizedLibrarySearchQuery(searchQuery), locale: locale)
+              filter: filter, sort: sort, query: normalizedLibrarySearchQuery(searchQuery), locale: locale,
+              favoritesRevision: library.favoriteSongsRevision)
     }
 
     var body: some View {
@@ -124,7 +125,7 @@ struct LibraryAlbumsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
             }
-            .musicMatchedTransitionSource(for: route)
+            .musicMatchedTransitionSource(for: route, prefetchArtworkAssets: false)
         } else {
             NavigationLink(value: route) {
                 HStack(spacing: 12) {
@@ -132,7 +133,7 @@ struct LibraryAlbumsView: View {
                     details
                 }
             }
-            .musicMatchedTransitionSource(for: route)
+            .musicMatchedTransitionSource(for: route, prefetchArtworkAssets: false)
         }
     }
 

@@ -328,26 +328,31 @@ struct ContentView: View {
         }
     }
 
+    /// TabView 的视图树结构必须恒定。
+    ///
+    /// 原实现用 `if player.currentSong != nil` 把整个 `TabView` 包成两个分支：
+    /// 首次播放（或清空队列）时分支切换，SwiftUI 会销毁并重建 `TabView`，
+    /// 连带所有 Tab 的 `NavigationStack`、每个列表的行视图全部重建。
+    /// 这就是「点一下播放，卡一秒才切过去」的来源。
+    /// 现在底部 accessory 常驻挂载，只让 `isEnabled` 和内容随播放状态变化。
     @ViewBuilder
     private var playerAwareTabView: some View {
-        if player.currentSong != nil {
-            if #available(iOS 26.1, *) {
-                tabs
-                    .tabViewBottomAccessory(
-                        isEnabled: !isTabViewBottomAccessorySuppressed
-                    ) {
-                        miniPlayer
-                    }
-            } else {
-                tabs
-                    .tabViewBottomAccessory {
-                        if !isTabViewBottomAccessorySuppressed {
-                            miniPlayer
-                        }
-                    }
-            }
+        if #available(iOS 26.1, *) {
+            tabs
+                .tabViewBottomAccessory(
+                    isEnabled: player.currentSong != nil
+                        && !isTabViewBottomAccessorySuppressed
+                ) {
+                    miniPlayer
+                }
         } else {
             tabs
+                .tabViewBottomAccessory {
+                    if player.currentSong != nil,
+                       !isTabViewBottomAccessorySuppressed {
+                        miniPlayer
+                    }
+                }
         }
     }
 

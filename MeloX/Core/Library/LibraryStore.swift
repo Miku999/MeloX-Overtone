@@ -11,6 +11,15 @@ final class LibraryStore {
     private(set) var profile: AccountProfile?
     private(set) var accountDetail: AccountDetail?
     private(set) var favoriteSongs: [Song] = []
+    /// 收藏列表的变更版本号。
+    ///
+    /// 列表索引的 `Request` 用它做 O(1) 相等判断：条数、首尾 id 都可能
+    /// 在「取消一首再加回另一首」时撞车，版本号保证任何一次收藏变更
+    /// 都能让缓存失效，同时不必逐字段比较两千多首 `Song`。
+    private(set) var favoriteSongsRevision = 0
+    /// 收藏列表第一首的 id。首页等只在 `body` 里读一个标量的地方用它，
+    /// 避免订阅整个 `favoriteSongs` 数组导致收藏一次就重算整个页面。
+    private(set) var firstFavoriteSongID: Int?
     private(set) var favoritePlaylists: [Playlist] = []
     private(set) var favoriteAlbums: [Album] = []
     private(set) var favoriteArtists: [Artist] = []
@@ -326,6 +335,7 @@ final class LibraryStore {
                     favoriteSongTotalCount = loadedSongIDs.count
                     favoriteSongs = songs
                     favoriteSongsNextOffset = loadedSongIDs.count
+                    noteFavoriteSongsChanged()
                 }
             } catch is CancellationError {
                 return
@@ -650,6 +660,7 @@ final class LibraryStore {
         profile = nil
         accountDetail = nil
         favoriteSongs = []
+        noteFavoriteSongsChanged()
         favoritePlaylists = []
         favoriteAlbums = []
         favoriteArtists = []
@@ -668,6 +679,11 @@ final class LibraryStore {
         hasMoreSubscribedPodcasts = false
         isLoadingMoreSubscribedPodcasts = false
         subscribedPodcastsLoadMoreError = nil
+    }
+
+    private func noteFavoriteSongsChanged() {
+        favoriteSongsRevision &+= 1
+        firstFavoriteSongID = favoriteSongs.first?.id
     }
 
     private func setLocalSong(
@@ -692,6 +708,7 @@ final class LibraryStore {
             favoriteSongsNextOffset += 1
         }
         favoriteSongTotalCount = favoriteSongIDs.count
+        noteFavoriteSongsChanged()
         persistContentInBackground()
     }
 
@@ -726,6 +743,7 @@ final class LibraryStore {
         profile = snapshot.profile
         accountDetail = snapshot.accountDetail
         favoriteSongs = snapshot.favoriteSongs
+        noteFavoriteSongsChanged()
         favoriteAddedDates = snapshot.favoriteAddedDates ?? [:]
         favoriteSongIDs = snapshot.favoriteSongIDs
         favoriteSongIDSet = Set(snapshot.favoriteSongIDs)

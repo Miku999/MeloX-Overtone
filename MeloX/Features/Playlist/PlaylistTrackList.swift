@@ -254,7 +254,13 @@ private struct PlaylistTrackRow: View {
             isHighlighted ? Color.accentColor.opacity(0.16)
                 : isCurrentSong ? Color.primary.opacity(0.10) : .clear
         )
-        .musicMatchedTransitionSource(for: .song(song))
+        // 歌曲详情页不用封面做背景，转场预取（下载原图 + 高斯模糊 + 取色）
+        // 在这里没有任何收效，却会让每一行各跑一次后台重活。
+        // 歌单动辄几千首，滚动时队列永远排不完，主线程跟着掉帧。
+        .musicMatchedTransitionSource(
+            for: .song(song),
+            prefetchArtworkAssets: false
+        )
         .accessibilityElement(children: .contain)
         .songSwipeActions(song, removal: onRemoveSong.map { remove in
             .action("ui.playlists.remove_song") { remove(song) }
