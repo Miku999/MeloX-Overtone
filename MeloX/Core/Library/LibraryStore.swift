@@ -60,6 +60,11 @@ final class LibraryStore {
     @ObservationIgnored
     private var subscribedPodcastPageLoadID: UUID?
 
+    /// 内容落盘的合并任务。收藏、取消收藏、播放记录都会触发落盘，
+    /// 每次落盘都要序列化整份收藏（数千首），必须合并。
+    @ObservationIgnored
+    private var persistTask: Task<Void, Never>?
+
     init(api: NeteaseAPI, settings: AppSettings) {
         self.api = api
         self.settings = settings
@@ -637,6 +642,8 @@ final class LibraryStore {
         // 歌单曲目缓存跟着账号走：换账号后旧 uin 的曲目不该再被命中。
         QQSongLibraryCache.shared.clear()
         lastSuccessfulRefresh = nil
+        persistTask?.cancel()
+        persistTask = nil
         subscribedPodcastPageLoadTask?.cancel()
         subscribedPodcastPageLoadTask = nil
         subscribedPodcastPageLoadID = nil
@@ -746,7 +753,16 @@ final class LibraryStore {
     }
 
     private func persistContentInBackground() {
-        Task { [weak self] in await self?.persistContent() }
+        persistTask?.cancel()
+        persistTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(700))
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else { return }
+            await self.persistContent()
+        }
     }
 
     private func persistContent() async {

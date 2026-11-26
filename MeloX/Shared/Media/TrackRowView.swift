@@ -12,6 +12,11 @@ struct TrackRowView: View {
     var representsCurrentEntry = true
     var secondaryMetadata: String?
     var subtitleOverride: String?
+    /// 列表行里关掉封面「详情资产」预取：每行各下一份图、各做一次高斯模糊
+    /// 与取色，2592 行的收藏列表滚动时会把主线程和网络全部占住。
+    var prefetchesTransitionArtwork = false
+    /// 长列表里注册 zoom 转场源本身也有开销，收藏列表这类超大列表关掉。
+    var usesCardTransition = true
     var playAction: (() -> Void)?
 
     @State private var presentedSheet: TrackRowSheet?
@@ -50,10 +55,16 @@ struct TrackRowView: View {
     }
 
     private var trackLabel: some View {
-        HStack(spacing: 12) {
+        let artworkSide: CGFloat = playAction == nil ? 44 : 48
+        return HStack(spacing: 12) {
             if showsArtwork {
-                SongRowArtwork(songID: song.id, url: song.album?.artworkURL, representsCurrentEntry: representsCurrentEntry)
-                    .frame(width: playAction == nil ? 44 : 48, height: playAction == nil ? 44 : 48)
+                SongRowArtwork(
+                    songID: song.id,
+                    url: song.album?.artworkURL,
+                    side: artworkSide,
+                    representsCurrentEntry: representsCurrentEntry
+                )
+                .frame(width: artworkSide, height: artworkSide)
             } else if let index {
                 if representsCurrentEntry && player.currentSong?.id == song.id {
                     SongRowWaveform().frame(width: 26)
@@ -98,7 +109,11 @@ struct TrackRowView: View {
             }
         }
         .contentShape(.rect)
-        .musicMatchedTransitionSource(for: .song(song))
+        .musicMatchedTransitionSource(
+            for: .song(song),
+            prefetchArtworkAssets: prefetchesTransitionArtwork,
+            enabled: usesCardTransition
+        )
         .contextMenu { actions }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)

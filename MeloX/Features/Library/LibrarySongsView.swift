@@ -25,6 +25,9 @@ struct LibrarySongsView: View {
         let request = request
         let cached = library.songIndex.value(for: request)
         let index = cached ?? LibrarySongIndex()
+        // 收藏列表动辄两千多首：逐行注册 zoom 转场源会拖慢滚动，
+        // 短列表（搜索、筛选后）保留转场动画。
+        let usesCardTransition = index.songs.count <= 240
         List {
             if !index.songs.isEmpty {
                 SongListPlaybackActions { shuffled in
@@ -35,7 +38,12 @@ struct LibrarySongsView: View {
             ForEach(index.sections) { section in
                 Section {
                     ForEach(section.songs) { song in
-                        TrackRowView(song: song, showsArtwork: true) {
+                        TrackRowView(
+                            song: song,
+                            showsArtwork: true,
+                            prefetchesTransitionArtwork: false,
+                            usesCardTransition: usesCardTransition
+                        ) {
                             Task { await player.play(song, in: index.songs) }
                         }
                         .overlay(alignment: .leading) {

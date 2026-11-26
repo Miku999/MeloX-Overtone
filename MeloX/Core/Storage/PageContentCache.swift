@@ -23,10 +23,18 @@ final class PageContentCache {
     }
 
     func store<Value: Encodable>(_ value: Value, for key: String) async {
-        guard settings.automaticallyCachesPageContent,
-              !Task.isCancelled,
-              let data = try? JSONEncoder().encode(value) else { return }
-        await storage.store(data, scope: Self.scope(for: settings.cookie), key: key)
+        guard settings.automaticallyCachesPageContent, !Task.isCancelled else { return }
+        let scope = Self.scope(for: settings.cookie)
+        // `JSONEncoder().encode` 必须离开主 actor：收藏快照含 2592 首完整曲目，
+        // 一次编码几百毫秒，留在主线程会让每次收藏/换歌都卡一下。
+        let box = PageContentEncodeBox(value)
+        let data = await Task.detached(priority: .utility) {
+            try? JSONEncoder().encode(box.value)
+        }.value
+        guard let data,
+              settings.automaticallyCachesPageContent,
+              !Task.isCancelled else { return }
+        await storage.store(data, scope: scope, key: key)
     }
 
     func removeAccount(cookie: String) async {
@@ -45,8 +53,7 @@ final class PageContentCache {
 }
 
 private actor PageContentCacheStorage {
-    static let shared = PageContentCacheStorage()
-    private let database: DatabaseQueue?
+    static let shared = PageContentCacheStorage()    private let database: DatabaseQueue?
 
     init(directory: URL = AppStorageLocations.pageContentCacheDirectory()) {
         do {
@@ -116,3 +123,14 @@ private actor PageContentCacheStorage {
         try? database?.vacuum()
     }
 }
+
+/// 把待编码的值搬到后台任务里。快照类型本身没有声明 `Sendable`，
+/// 但它是纯值类型、编码只读，与项目里 `ArtworkDetailAssetsBox` 同一套写法。
+private final class PageContentEncodeBox<Value>: @unchecked Sendable {
+    let value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+}
+

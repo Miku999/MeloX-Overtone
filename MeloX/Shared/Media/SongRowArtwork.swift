@@ -4,20 +4,26 @@ struct SongRowArtwork: View {
     let songID: Int
     let url: URL?
     var cornerRadius: CGFloat = 6
+    /// 已知行内尺寸时传具体值，跳过 `GeometryReader`；`nil` 保持原自适应行为。
+    var side: CGFloat?
     var representsCurrentEntry = true
 
     @Environment(PlayerStore.self) private var player
 
     var body: some View {
-        ArtworkImage(url: url, cornerRadius: cornerRadius)
-            .overlay {
-                if representsCurrentEntry && player.currentSong?.id == songID {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.black.opacity(0.48))
-                        .overlay { SongRowWaveform().foregroundStyle(.white) }
-                        .allowsHitTesting(false)
-                }
+        ArtworkImage(
+            url: url,
+            cornerRadius: cornerRadius,
+            fixedSize: side.map { CGSize(width: $0, height: $0) }
+        )
+        .overlay {
+            if representsCurrentEntry && player.currentSong?.id == songID {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(.black.opacity(0.48))
+                    .overlay { SongRowWaveform().foregroundStyle(.white) }
+                    .allowsHitTesting(false)
             }
+        }
     }
 }
 

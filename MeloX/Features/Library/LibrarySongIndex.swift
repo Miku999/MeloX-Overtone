@@ -1,10 +1,10 @@
 import Foundation
 
-nonisolated enum LibrarySongSort: String {
+nonisolated enum LibrarySongSort: String, Equatable {
     case artist, added, name
 }
 
-nonisolated enum LibrarySongFilter {
+nonisolated enum LibrarySongFilter: Equatable {
     case all, favorites, downloaded
 }
 
@@ -16,13 +16,64 @@ nonisolated struct LibrarySongIndex {
     }
 
     struct Request: Equatable {
-        var favorites: [Song]
+        let favorites: [Song]
         let favoriteDates: [Int: Date]
         let downloads: [DownloadedSong]
         let filter: LibrarySongFilter
         let sort: LibrarySongSort
         let query: String
         let locale: Locale
+
+        init(
+            favorites: [Song],
+            favoriteDates: [Int: Date],
+            downloads: [DownloadedSong],
+            filter: LibrarySongFilter,
+            sort: LibrarySongSort,
+            query: String,
+            locale: Locale
+        ) {
+            self.favorites = favorites
+            self.favoriteDates = favoriteDates
+            self.downloads = downloads
+            self.filter = filter
+            self.sort = sort
+            self.query = query
+            self.locale = locale
+            self.favoritesFingerprint = Self.fingerprint(of: favorites)
+        }
+
+        /// 收藏曲目的轻量指纹。
+        ///
+        /// `Song` 的 `Equatable` 是逐字段合成的（含 `artists`、`album` 里的字符串），
+        /// 2592 首直接比较一次要几毫秒；而 SwiftUI 的 `body`、`.task(id:)`
+        /// 在滚动时反复求值，累加起来就是整机掉帧。这里只比首尾各 6 个 id：
+        /// 收藏/取消收藏会改顺序或改条数，必然反映到指纹上。
+        private let favoritesFingerprint: String?
+
+        private static func fingerprint(of songs: [Song]) -> String? {
+            guard !songs.isEmpty else { return nil }
+            var parts: [String] = []
+            parts.reserveCapacity(16)
+            parts.append(String(songs.count))
+            for song in songs.prefix(6) {
+                parts.append(String(song.id))
+            }
+            for song in songs.suffix(6) {
+                parts.append(String(song.id))
+            }
+            return parts.joined(separator: ",")
+        }
+
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.filter == rhs.filter
+                && lhs.sort == rhs.sort
+                && lhs.query == rhs.query
+                && lhs.locale.identifier == rhs.locale.identifier
+                && lhs.downloads.count == rhs.downloads.count
+                && lhs.favoriteDates.count == rhs.favoriteDates.count
+                && lhs.favoritesFingerprint == rhs.favoritesFingerprint
+        }
     }
 
     var sections: [Section] = []
@@ -45,9 +96,13 @@ nonisolated struct LibrarySongIndex {
         }
 
         var seen = Set<Int>()
+        seen.reserveCapacity(candidates.count)
         var entries = [(song: Song, letter: String, key: String, offset: Int)]()
+        entries.reserveCapacity(candidates.count)
         for (offset, song) in candidates.enumerated() {
-            try Task.checkCancellation()
+            if offset & 0xFF == 0 {
+                try Task.checkCancellation()
+            }
             guard seen.insert(song.id).inserted else { continue }
             if !request.query.isEmpty,
                !song.name.localizedCaseInsensitiveContains(request.query),
@@ -78,6 +133,8 @@ nonisolated struct LibrarySongIndex {
         }
 
         var index = Self()
+        index.sections.reserveCapacity(32)
+        index.songs.reserveCapacity(entries.count)
         for entry in entries {
             if index.sections.last?.title != entry.letter {
                 index.sections.append(Section(title: entry.letter, songs: []))
@@ -90,8 +147,41 @@ nonisolated struct LibrarySongIndex {
 
     static func collationKey(_ text: String, locale: Locale) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let latin = trimmed.utf8.allSatisfy { $0 < 128 } ? trimmed
-            : trimmed.applyingTransform(.toLatin, reverse: false) ?? trimmed
-        return latin.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: locale).uppercased()
+        guard !trimmed.isEmpty else { return "" }
+        // `applyingTransform(.toLatin)` 是 ICU 音译，中文歌名/歌手名每次都要走一遍，
+        // 2592 首里同一歌手、同一专辑重复极多。缓存掉这部分能省下大半构建时间。
+        return CollationKeyCache.shared.value(for: locale.identifier + "\u{1}" + trimmed) {
+            let latin = trimmed.utf8.allSatisfy { $0 < 128 } ? trimmed
+                : trimmed.applyingTransform(.toLatin, reverse: false) ?? trimmed
+            return latin.folding(options: [.diacriticInsensitive, .widthInsensitive], locale: locale).uppercased()
+        }
+    }
+}
+
+/// 音译排序键缓存。`build` 跑在 `@concurrent` 后台，用锁保护。
+private nonisolated final class CollationKeyCache: @unchecked Sendable {
+    nonisolated static let shared = CollationKeyCache()
+
+    private let lock = NSLock()
+    private var storage: [String: String] = [:]
+    private let limit = 16_384
+
+    func value(for key: String, build: () -> String) -> String {
+        lock.lock()
+        if let cached = storage[key] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
+        let value = build()
+
+        lock.lock()
+        if storage.count >= limit {
+            storage.removeAll(keepingCapacity: true)
+        }
+        storage[key] = value
+        lock.unlock()
+        return value
     }
 }
