@@ -55,6 +55,15 @@ struct ContentView: View {
         #endif
     }
 
+    /// 账号刷新触发标识。QQ 模式下网易云 Cookie 恒为空，改用 QQ 登录态，
+    /// 否则登录成功后 LibraryStore 不会重新拉账号数据。
+    private var accountTaskID: String {
+        if QQMusicBackend.enabled {
+            return QQAuthStore.isLoggedIn ? "qq://(QQAuthStore.uin)" : ""
+        }
+        return settings.cookie
+    }
+
     var body: some View {
         Group {
             if settings.hasCompletedOnboarding {
@@ -155,7 +164,7 @@ struct ContentView: View {
             .task {
                 await floatingLyrics.monitor()
             }
-            .task(id: settings.cookie) {
+            .task(id: accountTaskID) {
                 await library.refresh()
             }
             .background(alignment: .topLeading) {
