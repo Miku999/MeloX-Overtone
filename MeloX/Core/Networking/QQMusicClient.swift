@@ -220,6 +220,10 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
 
     /// 构造 musicu.fcg 的 comm 段，与 QQ 音乐轻量客户端一致。
     /// 已登录时把 `uin` / `authst` 换成真实值，匿名调用一律 0 / 空串。
+    ///
+    /// `format: "json"` 不能省：缺这个字段时 `vkey.GetVkeyServer`
+    /// 仍返回 code 0，但 `midurlinfo[].purl` 一律为空，看起来像「没权限」，
+    /// 实际是响应按二进制协商、字段被丢掉。
     static func comm(
         ct: Int = 11,
         cv: String = "1003006"
@@ -228,28 +232,75 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
         return [
             "ct": ct,
             "cv": cv,
+            "format": "json",
             "uin": loggedIn ? QQAuthStore.uin : 0,
             "tmeAppID": "qqmusiclight",
             "authst": loggedIn ? QQAuthStore.authst : "",
-            "tmeLoginType": loggedIn ? 2 : 0,
+            "tmeLoginType": loggedIn ? QQAuthStore.loginType : 0,
             "psrf_qqaccess_token": "",
             "psrf_qqopenid": "",
             "psrf_qqunionid": "",
         ]
     }
 
-    /// vkey 链路的 comm 段。`uin` 必须是字符串，与 `loginUin` 保持同型，
-    /// 型别不一致时服务端会按匿名处理并直接返回空 purl。
+    /// vkey 链路的 comm 段。
+    ///
+    /// 这里的字段组合是实测能出 purl 的那一套（对齐 QQ 音乐网页版
+    /// `getplaysongvkey` 请求）：`ct = 24` / `cv = 4747474` /
+    /// `platform = "yqq.json"` / `needNewCode = 0` / `g_tk`。
+    /// 少 `g_tk` 或 `platform` 写成 `"20"` 时，登录态也可能只回空 purl。
     static func vkeyComm() -> [String: Any] {
         let loggedIn = QQAuthStore.isLoggedIn
         let uin = loggedIn ? String(QQAuthStore.uin) : "0"
+        let gTk = QQAuthStore.gTk
         return [
-            "ct": 24,
-            "cv": 0,
             "uin": uin,
+            "format": "json",
             "authst": loggedIn ? QQAuthStore.authst : "",
-            "tmeLoginType": loggedIn ? 2 : 0,
+            "cv": 4747474,
+            "ct": 24,
+            "inCharset": "utf-8",
+            "outCharset": "utf-8",
+            "notice": 0,
+            "platform": "yqq.json",
+            "needNewCode": 0,
+            "g_tk_new_20200303": gTk,
+            "g_tk": gTk,
         ]
+    }
+
+    /// vkey 专用 URL。
+    ///
+    /// 网页版把鉴权参数放在 query 上（`- = getplaysongvkey`、`g_tk`、
+    /// `loginUin`、`platform = yqq.json`），少了这些即使 body 完全正确，
+    /// 服务端也按「无来源的匿名请求」处理。
+    static func vkeyURL() -> URL? {
+        var components = URLComponents(string: "https://u.y.qq.com/cgi-bin/musicu.fcg")
+        let gTk = String(QQAuthStore.gTk)
+        components?.queryItems = [
+            URLQueryItem(name: "-", value: "getplaysongvkey"),
+            URLQueryItem(name: "g_tk", value: gTk),
+            URLQueryItem(name: "loginUin", value: uinString),
+            URLQueryItem(name: "hostUin", value: "0"),
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "inCharset", value: "utf8"),
+            URLQueryItem(name: "outCharset", value: "utf-8"),
+            URLQueryItem(name: "notice", value: "0"),
+            URLQueryItem(name: "platform", value: "yqq.json"),
+            URLQueryItem(name: "needNewCode", value: "0"),
+        ]
+        return components?.url
+    }
+
+    /// 走 vkey 专用 URL 的 musicu 调用。
+    func musicuVkey<Response: Decodable>(
+        body: [String: Any],
+        timeout: TimeInterval = 10
+    ) async throws -> Response {
+        guard let url = Self.vkeyURL() else {
+            throw APIError.requestEncoding
+        }
+        return try await postJSON(url, body: body, timeout: timeout)
     }
 
     /// 当前请求应使用的 uin 字符串。未登录为 "0"。
@@ -265,5 +316,45 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
             throw APIError.requestEncoding
         }
         return try await postJSON(url, body: body, timeout: timeout)
+    }
+
+    /// 原样返回响应字节，供类型不稳定的 CGI（登录态探测、诊断页）使用。
+    func musicuRaw(
+        body: [String: Any],
+        timeout: TimeInterval = 10
+    ) async throws -> Data {
+        guard let url = URL(string: "https://u.y.qq.com/cgi-bin/musicu.fcg") else {
+            throw APIError.requestEncoding
+        }
+        return try await postRaw(url, body: body, timeout: timeout)
+    }
+
+    /// vkey 专用 URL 的原始响应，诊断页用。
+    func musicuVkeyRaw(
+        body: [String: Any],
+        timeout: TimeInterval = 10
+    ) async throws -> Data {
+        guard let url = Self.vkeyURL() else {
+            throw APIError.requestEncoding
+        }
+        return try await postRaw(url, body: body, timeout: timeout)
+    }
+
+    private func postRaw(
+        _ url: URL,
+        body: [String: Any],
+        timeout: TimeInterval
+    ) async throws -> Data {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = timeout
+        request.setValue("application/json;charset=UTF-8", forHTTPHeaderField: "Content-Type")
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(referer, forHTTPHeaderField: "Referer")
+        Self.applyAuth(&request)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await session.data(for: request)
+        try Self.validate(response)
+        return data
     }
 }

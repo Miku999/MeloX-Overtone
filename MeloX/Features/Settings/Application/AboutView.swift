@@ -38,6 +38,16 @@ struct AboutView: View {
 
             Section {
                 NavigationLink {
+                    AudioDiagnosticsView()
+                } label: {
+                    Label("音频诊断", systemImage: "waveform.path.ecg")
+                }
+            } footer: {
+                Text("播放异常时先跑一次诊断，结果可直接截图。")
+            }
+
+            Section {
+                NavigationLink {
                     ReleaseNotesView(
                         releaseNotes: releaseNotes.currentReleaseNotes,
                         currentVersion: releaseNotes.currentVersion

@@ -248,31 +248,33 @@ struct QQMusicAPI {
         let cacheKey = "\(id):\(quality.rawValue)"
         if let cached = QQVkeyStore.cached(cacheKey) { return cached }
 
-        guard let songMID = try await resolveSongMID(songID: id) else {
-            // 连 songmid 都解析不出来，QQ 侧无从申请，直接走镜像音源。
-            let mirrored = try await mirrorSource(for: id, metadata: metadata)
-            QQVkeyStore.store(mirrored, for: cacheKey)
-            return mirrored
-        }
-        // vkey 的 filename 用 media_mid；与 songmid 不同，缺失时退回 songmid。
-        let mediaMID = QQIDRegistry.shared.mid(entity: "media", numericID: id) ?? songMID
+        let diag = QQPlaybackDiagnostics.shared
+        diag.log("playback id=\(id) quality=\(quality.rawValue) uin=\(QQMusicClient.uinString) key=\(QQAuthStore.authst.count)")
 
-        do {
-            let source = try await requestVkey(
-                songMID: songMID,
-                mediaMID: mediaMID,
-                quality: quality
-            )
-            QQVkeyStore.store(source, for: cacheKey)
-            return source
-        } catch {
-            // 匿名 vkey 对任何歌曲都返回 result = 104003（服务端无权限），
-            // 登录态下 VIP / 地区受限曲目同样拿不到 purl。
-            // 此时回落到公开镜像音源，宁可播到同名的另一版本，也不要一直转圈。
-            let mirrored = try await mirrorSource(for: id, metadata: metadata)
-            QQVkeyStore.store(mirrored, for: cacheKey)
-            return mirrored
+        // 第一跳：QQ 官方 vkey。登录态下才有 purl，失败不抛错，落到镜像。
+        if let songMID = try await resolveSongMID(songID: id) {
+            // vkey 的 filename 用 media_mid；与 songmid 不同，缺失时退回 songmid。
+            let mediaMID = QQIDRegistry.shared.mid(entity: "media", numericID: id) ?? songMID
+            do {
+                let source = try await requestVkey(
+                    songMID: songMID,
+                    mediaMID: mediaMID,
+                    quality: quality
+                )
+                diag.log("vkey 命中 \(source.format ?? "?") \(source.bitrate ?? 0)")
+                QQVkeyStore.store(source, for: cacheKey)
+                return source
+            } catch {
+                diag.log("vkey 未命中: \(error)")
+            }
+        } else {
+            diag.log("resolveSongMID 为空，直接走镜像")
         }
+
+        // 第二跳：公开镜像音源。宁可播到同名另一版本，也不要一直转圈。
+        let mirrored = try await mirrorSource(for: id, metadata: metadata)
+        QQVkeyStore.store(mirrored, for: cacheKey)
+        return mirrored
     }
 
     /// QQ 拿不到 purl 时的兜底：用歌名 + 歌手在公开镜像源取流。
@@ -291,8 +293,14 @@ struct QQMusicAPI {
             artist = detail?.artists.map(\.name).joined(separator: " ") ?? ""
         }
 
-        guard !name.isEmpty else { throw APIError.noPlayableSource }
-        return try await QQMateMirror.playbackSource(name: name, artist: artist)
+        guard !name.isEmpty else {
+            QQPlaybackDiagnostics.shared.log("镜像失败：歌名与歌手全空")
+            throw APIError.noPlayableSource
+        }
+        QQPlaybackDiagnostics.shared.log("镜像搜索 \(name) / \(artist)")
+        let source = try await QQMateMirror.playbackSource(name: name, artist: artist)
+        QQPlaybackDiagnostics.shared.log("镜像命中 \(source.url.host ?? "?") \(source.format ?? "?")")
+        return source
     }
 
     /// 一次请求同时申请所需品质与全部降级档位。
@@ -332,7 +340,7 @@ struct QQMusicAPI {
                 "method": "CgiGetVkey",
                 "param": [
                     "filename": filenames,
-                    "guid": "10000",
+                    "guid": QQAuthStore.guid,
                     "songmid": Array(repeating: songMID, count: filenames.count),
                     "songtype": Array(repeating: 0, count: filenames.count),
                     "uin": uin,
@@ -345,16 +353,21 @@ struct QQMusicAPI {
             "comm": QQMusicClient.vkeyComm(),
         ]
 
-        let envelope: QQVkeyEnvelope = try await client.musicu(body: body, timeout: 8)
+        let envelope: QQVkeyEnvelope = try await client.musicuVkey(body: body, timeout: 10)
         let sip = envelope.req1.data?.sip?.first ?? ""
         let infos = envelope.req1.data?.midurlinfo ?? []
+        QQPlaybackDiagnostics.shared.log(
+            "vkey resp code=\(envelope.req1.code ?? -1) sip=\(sip) purl=\(infos.compactMap { $0.purl }.filter { !$0.isEmpty }.count)/\(infos.count)"
+        )
 
         // 文件服务地址缺失时，用 QQ 固定 CDN 兜底，purl 本身是完整相对路径。
         let host = sip.isEmpty ? "http://ws.stream.qqmusic.qq.com/" : sip
         for (index, info) in infos.enumerated() {
             guard index < filenames.count else { break }
             let purl = info.purl ?? ""
-            guard !purl.isEmpty, let url = URL(string: host + purl) else { continue }
+            guard !purl.isEmpty else { continue }
+            // purl 落在 http:// 上，统一升级到 https，避开 ATS 与 80 端口劫持。
+            guard let url = PlaybackURLNormalizer.normalize(rawURL: host + purl) else { continue }
             let slot = ladder[index % ladder.count]
             return PlaybackSource(
                 url: url,

@@ -44,8 +44,12 @@ on:
       - qq
       - qq-music
     paths:
+      - "MeloX/Info.plist"
       - "MeloX/Core/Networking/QQ*.swift"
+      - "MeloX/Core/Networking/PlaybackURLNormalizer.swift"
       - "MeloX/Core/Networking/NeteaseAPI*.swift"
+      - "MeloX/Core/Playback/**"
+      - "MeloX/Features/Settings/**"
       - "MeloX/Features/Player/NowPlaying/**"
       - "MeloX/Features/Player/Lyrics/**"
       - "MeloX/Features/Player/TextPV/**"

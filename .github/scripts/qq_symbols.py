@@ -28,6 +28,8 @@ QQ_FILES = [
     "QQIDRegistry.swift",
     "QQMusicAPI.swift",
     "QQMusicBackend.swift",
+    "QQMateMirror.swift",
+    "PlaybackURLNormalizer.swift",
 ]
 PATCHED_FILES = [
     "NeteaseAPI.swift",

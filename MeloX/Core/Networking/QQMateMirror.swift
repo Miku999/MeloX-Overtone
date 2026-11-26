@@ -1,20 +1,25 @@
 import Foundation
 
 /// QQ 音乐的 `vkey.GetVkeyServer / CgiGetVkey` 在匿名（`uin = 0`）下对
-/// 任何歌曲都返回 `result = 104003`（无权限），而 104003 的判定在服务端，
-/// 客户端拿不到任何 purl。登录后也只对账号有权限的曲目放行。
+/// 任何歌曲都返回空 `purl`，登录态也只对账号有权限的曲目放行。
 ///
 /// 这层兜底解决「装了就是一直转圈」的问题：用 QQ 侧的「歌名 + 歌手」
 /// 去网易云公开接口搜同名曲目，取可匿名访问的播放地址。
 ///
+/// 三条取流链，任一命中即返回：
+/// 1. `/api/song/enhance/player/url` —— 带 `size` / `br`，能区分完整曲目与试听片段；
+/// 2. `api.injahow.cn/meting` —— 302 到 TLS 直链，enhance 拿不到 url 时兜底；
+/// 3. `/song/media/outer/url` —— 老接口，仍是 302 到 mp3，最后一道。
+///
+/// 所有返回地址统一过 `PlaybackURLNormalizer`，把 `http://` 升级成 `https://`。
+///
 /// 取舍：
-/// - 只用匿名可访问的 `/api/search/get` 与 `/api/song/enhance/player/url`，
-///   不依赖任何账号。
+/// - 只用匿名可访问的接口，不依赖任何账号。
 /// - 搜索结果按「歌名归一化相等 + 歌手归一化相等」打分，过滤伴奏 / 铃声 /
 ///   纯音乐等明显不是同一首歌的条目；Live / 翻唱 / DJ 版保留，因为很多
 ///   曲目在网易云只有这些版本。
-/// - 服务端对 VIP 曲目匿名只给 30 秒试听片段（约 480 KB）。命中片段时
-///   记下但继续找，找到完整曲目就用完整的；全部候选都是片段时才用最大的那个。
+/// - VIP 曲目匿名只给约 480 KB 的 30 秒片段。命中片段时记下但继续找，
+///   找到完整曲目就用完整的；全部候选都是片段时才用最大的那个。
 nonisolated enum QQMateMirror {
 
     // MARK: - 对外入口
@@ -25,15 +30,18 @@ nonisolated enum QQMateMirror {
         guard !trimmedName.isEmpty else { throw APIError.noPlayableSource }
 
         let candidates = try await search(name: trimmedName, artist: artist)
+        let diag = QQPlaybackDiagnostics.shared
+        diag.log("镜像候选 \(candidates.count) 条: \(candidates.prefix(3).map { "\($0.id)/\($0.score)" }.joined(separator: ","))")
         guard !candidates.isEmpty else { throw APIError.noPlayableSource }
 
         var partial: PlaybackSource?
         var partialSize = 0
 
-        // 候选按得分降序，最多试 3 个：正常情况第一个就命中，失败才继续。
-        for candidate in candidates.prefix(3) {
+        // 候选按得分降序，最多试 4 个：正常情况第一个就命中，失败才继续。
+        for candidate in candidates.prefix(4) {
             guard let resolved = try? await resolve(songID: candidate.id) else { continue }
-            if resolved.size >= fullTrackThreshold {
+            // size < 0 表示来源没给 Content-Length，按完整曲目处理，不再挑三拣四。
+            if resolved.size < 0 || resolved.size >= fullTrackThreshold {
                 return resolved.source
             }
             if resolved.size > partialSize {
@@ -42,7 +50,10 @@ nonisolated enum QQMateMirror {
             }
         }
 
-        if let partial { return partial }
+        if let partial {
+            diag.log("镜像只拿到片段 \(partialSize) 字节")
+            return partial
+        }
         throw APIError.noPlayableSource
     }
 
@@ -157,7 +168,35 @@ nonisolated enum QQMateMirror {
 
     // MARK: - 取流
 
+    /// 依次尝试三条取流链。全部失败抛 `noPlayableSource`。
     private static func resolve(
+        songID: Int
+    ) async throws -> (source: PlaybackSource, size: Int) {
+        let diag = QQPlaybackDiagnostics.shared
+
+        do {
+            let result = try await resolveViaEnhance(songID: songID)
+            diag.log("enhance 命中 \(result.size) 字节 \(result.source.url.host ?? "?")")
+            return result
+        } catch {
+            diag.log("enhance 失败 \(songID): \(error)")
+        }
+
+        do {
+            let result = try await resolveViaMeting(songID: songID)
+            diag.log("meting 命中 \(result.size) 字节")
+            return result
+        } catch {
+            diag.log("meting 失败 \(songID): \(error)")
+        }
+
+        let result = try await resolveViaOuter(songID: songID)
+        diag.log("outer 命中 \(result.size) 字节")
+        return result
+    }
+
+    /// 源 1：`/api/song/enhance/player/url`，返回完整 JSON，含 `size` / `br` / `type`。
+    private static func resolveViaEnhance(
         songID: Int
     ) async throws -> (source: PlaybackSource, size: Int) {
         guard let url = URL(
@@ -173,7 +212,7 @@ nonisolated enum QQMateMirror {
         }
 
         let rawURL = (item["url"] as? String) ?? ""
-        guard !rawURL.isEmpty, let resolvedURL = URL(string: rawURL) else {
+        guard !rawURL.isEmpty, let resolvedURL = PlaybackURLNormalizer.normalize(rawURL: rawURL) else {
             throw APIError.noPlayableSource
         }
 
@@ -189,6 +228,68 @@ nonisolated enum QQMateMirror {
                 quality: .standard
             ),
             size
+        )
+    }
+
+    /// 源 2：`api.injahow.cn/meting`，302 到真实 mp3，最终地址通常是 TLS。
+    private static func resolveViaMeting(
+        songID: Int
+    ) async throws -> (source: PlaybackSource, size: Int) {
+        guard let url = URL(string: "https://api.injahow.cn/meting/?type=url&id=\(songID)") else {
+            throw APIError.requestEncoding
+        }
+        return try await probeRedirect(url)
+    }
+
+    /// 源 3：`/song/media/outer/url`，老接口，302 到 mp3。
+    private static func resolveViaOuter(
+        songID: Int
+    ) async throws -> (source: PlaybackSource, size: Int) {
+        guard let url = URL(string: "https://music.163.com/song/media/outer/url?id=\(songID).mp3") else {
+            throw APIError.requestEncoding
+        }
+        return try await probeRedirect(url)
+    }
+
+    /// 跟随 302，只读 1 个字节就断开：拿到最终地址与 `Content-Length`，
+    /// 不把整首歌下载到内存里。
+    private static func probeRedirect(_ url: URL) async throws -> (source: PlaybackSource, size: Int) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 8
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("https://music.163.com/", forHTTPHeaderField: "Referer")
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw APIError.server(statusCode: http.statusCode, message: "mirror redirect")
+        }
+
+        // 读一个字节确认是真流，然后就不用继续。
+        var iterator = bytes.makeAsyncIterator()
+        guard let first = try await iterator.next() else {
+            throw APIError.noPlayableSource
+        }
+        // MP3 帧同步 / ID3 头；拿到 HTML 说明被重定向到错误页。
+        if first == 0x3C { throw APIError.noPlayableSource }
+
+        let finalURL = response.url ?? url
+        let normalized = PlaybackURLNormalizer.normalize(finalURL)
+        let contentLength = intValue(http.value(forHTTPHeaderField: "Content-Length")) ?? -1
+        let format = normalized.pathExtension.isEmpty ? "mp3" : normalized.pathExtension
+
+        return (
+            PlaybackSource(
+                url: normalized,
+                bitrate: 128_000,
+                format: format,
+                quality: .standard
+            ),
+            contentLength
         )
     }
 

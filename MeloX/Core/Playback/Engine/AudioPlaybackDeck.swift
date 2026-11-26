@@ -75,6 +75,9 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         initialSeek = max(startAt, 0)
         isSeeking = true
         transition(to: .loading)
+        QQPlaybackDiagnostics.shared.log(
+            "deck load \(source.url.scheme ?? "-")://\(source.url.host ?? "-") \(source.format ?? "-")"
+        )
         let format = await AudioPlaybackFormat.load(from: source.url)
         guard itemID == id, !Task.isCancelled else { return false }
         let player = AudioStreaming.AudioPlayer(
@@ -97,6 +100,18 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         return await withCheckedContinuation { continuation in
             loadContinuation = continuation
             player.play(url: source.url)
+            // 15 秒还没进 playing 就判定失败。ATS 拦掉媒体流时底层只会一直
+            // bufferring，不报 unexpectedError，UI 就永远停在 0:00 转圈。
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(15))
+                guard let self, self.itemID == id, self.loadContinuation != nil else { return }
+                QQPlaybackDiagnostics.shared.log("deck load 超时 15s: \(source.url.host ?? "-")")
+                self.error = APIError.noPlayableSource
+                self.loadContinuation?.resume(returning: false)
+                self.loadContinuation = nil
+                self.transition(to: .paused)
+                self.onFailure?(APIError.noPlayableSource)
+            }
         }
     }
 
@@ -221,6 +236,7 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     }
     func audioPlayerUnexpectedError(player: AudioStreaming.AudioPlayer, error: AudioPlayerError) {
         guard player === self.player else { return }
+        QQPlaybackDiagnostics.shared.log("deck error \(error)")
         self.error = error
         isSeeking = false
         wantsPlayback = false

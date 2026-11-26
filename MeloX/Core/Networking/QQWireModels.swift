@@ -615,6 +615,19 @@ nonisolated struct QQVkeyEnvelope: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case req1 = "req_1"
+        case req0 = "req_0"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // 服务端按请求里的键名回显，`req_0` / `req_1` 都要认。
+        if let value = try container.decodeIfPresent(Req.self, forKey: .req1) {
+            req1 = value
+        } else if let value = try container.decodeIfPresent(Req.self, forKey: .req0) {
+            req1 = value
+        } else {
+            req1 = Req(code: -1, data: nil)
+        }
     }
 
     nonisolated struct Req: Decodable, Sendable {
