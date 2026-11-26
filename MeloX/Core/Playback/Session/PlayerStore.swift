@@ -1257,7 +1257,11 @@ final class PlayerStore {
     private static func isRetryablePlaybackSourceError(_ error: Error) -> Bool {
         if let apiError = error as? APIError {
             switch apiError {
-            case .noPlayableSource, .emptyResponse, .invalidResponse:
+            case .noPlayableSource:
+                // 服务端明确回复「没有可用播放地址」（版权 / 地区 / 已下架）。
+                // 这是确定性结果，重试 3 次只会让播放按钮多转 20 多秒。
+                return false
+            case .emptyResponse, .invalidResponse:
                 return true
             case .server(let statusCode, _) where statusCode >= 500:
                 return true
