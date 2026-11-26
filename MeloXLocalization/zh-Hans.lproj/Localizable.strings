@@ -1093,7 +1093,7 @@
 "ui.home.error.current_song_required" = "请先播放一首歌曲，再查找相似歌曲。";
 "ui.home.error.no_playable_recommendations" = "QQ 音乐暂时没有返回可播放的推荐歌曲。";
 "ui.home.section.recommended_playlists" = "推荐播放列表";
-"ui.home.section.recently_trending" = "近期云村热播";
+"ui.home.section.recently_trending" = "近期 QQ 热播";
 "ui.home.section.tailored" = "根据你的喜好为你推荐";
 "ui.home.section.charts" = "排行榜";
 "ui.home.section.your_playlists" = "你的播放列表";
