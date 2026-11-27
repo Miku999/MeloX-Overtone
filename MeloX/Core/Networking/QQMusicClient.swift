@@ -163,7 +163,9 @@ nonisolated final class QQMusicClient: @unchecked Sendable {
         }
     }
 
-    private func getText(_ url: URL) async throws -> String {
+    /// 取纯文本响应（SSR 页面、网页版个人主页等）。
+    /// 账号资料兜底要从 HTML 里抽昵称/头像，必须能拿到原文。
+    func getText(_ url: URL) async throws -> String {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 12

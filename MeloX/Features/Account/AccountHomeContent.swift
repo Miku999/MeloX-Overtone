@@ -76,7 +76,9 @@ private struct AccountProfileDetailHero: View {
                     .padding(.horizontal, 28)
             }
 
-            if let detail {
+            // QQ 模式的 `level` / `listenSongs` 恒为 0（QQ 没有对应接口），
+            // 显示「等级 0 · 听歌 0 首」比不显示更差，这里只在有真实数据时渲染。
+            if let detail, detail.level > 0 {
                 Text(
                     L10n.format(
                         "ui.account.level_listen_count",

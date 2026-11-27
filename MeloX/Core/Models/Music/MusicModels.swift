@@ -14,13 +14,23 @@ nonisolated func makeArtworkURL(from source: String?, dimension: Int = 1_024) ->
     if components.scheme?.lowercased() == "http" {
         components.scheme = "https"
     }
-    // 分类歌单的 coverImgUrl 常带有多段 imageView / watermark 查询参数，
-    // 再追加 param 会让网易云图片服务拒绝处理。路径本身就是原始封面，
-    // 统一移除服务端返回的处理链后请求固定尺寸即可。
-    components.query = nil
-    components.queryItems = [
-        URLQueryItem(name: "param", value: "\(dimension)y\(dimension)")
-    ]
+    // 只有网易云图床吃 `param=NyN` 这套处理链：分类歌单的 coverImgUrl 常带
+    // 多段 imageView / watermark 查询参数，再追加 `param` 会让图片服务拒绝处理，
+    // 所以清空后只留固定尺寸。
+    //
+    // 第三方图床（QQ 音乐 `y.gtimg.cn`、QQ 头像 `thirdqq.qlogo.cn` 等）的 query
+    // 本身就是必填参数 —— qlogo 缺 `nk` / `b` 直接回 400，清空后头像必然加载失败。
+    // 因此按域名分流，非网易云域名原样保留。
+    let host = (components.host ?? "").lowercased()
+    let isNeteaseImageHost = host.hasSuffix("music.126.net")
+        || host.hasSuffix("126.net")
+        || host.hasSuffix("127.net")
+    if isNeteaseImageHost {
+        components.query = nil
+        components.queryItems = [
+            URLQueryItem(name: "param", value: "\(dimension)y\(dimension)")
+        ]
+    }
     return components.url
 }
 

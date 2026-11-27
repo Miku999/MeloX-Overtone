@@ -899,17 +899,68 @@ struct QQMusicAPI {
         return Array(songs.filter { $0.id != id }.prefix(max(limit, 0)))
     }
 
-    // MARK: - 账号（QQ 游客模式：不登录，本地"我喜欢"由 Store 管理）
+    // MARK: - 账号
 
+    /// QQ 音乐账号档案。
+    ///
+    /// QQ 侧没有与网易云 `/api/v1/user/detail/<id>` 等价的公开资料端点，
+    /// 昵称和头像散落在登录态接口里，所以这里做四路兜底：
+    ///
+    /// 1. `PlaylistBaseRead / GetPlaylistByUin` 的 `v_playlist[].nick`
+    ///    （音乐库本来就在调，登录态必然成功）；
+    /// 2. `musicu.fcg` 的 `music.UserInfo.userInfoServer / GetLoginUserInfo`；
+    /// 3. 网页版个人主页 CGI `fcg_get_profile_homepage.fcg`；
+    /// 4. 网页版个人主页 SSR 里的 `__INITIAL_DATA__`（正则抽 nick / headpic）。
+    ///
+    /// 四路全失败时昵称退回 `QQ <uin>`、头像退回 QQ 号头像
+    /// （`thirdqq.qlogo.cn` 匿名可读，只要有 uin 就一定能出图）。
+    /// 结果写进 `QQAuthStore`，12 小时内不再重复打接口。
     func accountProfile() async throws -> AccountProfile {
         let uin = QQAuthStore.uin
-        let loggedIn = QQAuthStore.isLoggedIn
+        guard QQAuthStore.isLoggedIn else {
+            return AccountProfile(
+                id: 0,
+                nickname: L10n.string("ui.lyrics.source.qq_music"),
+                avatarURLString: nil,
+                backgroundURLString: nil,
+                signature: nil,
+                follows: nil,
+                followeds: nil,
+                eventCount: nil,
+                playlistCount: nil,
+                playlistBeSubscribedCount: nil
+            )
+        }
+
+        var nickname = QQAuthStore.nickname
+        var avatar = QQAuthStore.avatarURLString
+        if Self.isProfileCacheStale(nickname: nickname, avatarURLString: avatar) {
+            if let identity = await fetchLoginUserIdentity() {
+                if let value = identity.nickname, !value.isEmpty {
+                    nickname = value
+                }
+                if let value = identity.avatarURLString, !value.isEmpty {
+                    avatar = value
+                }
+                QQAuthStore.saveProfile(
+                    nickname: nickname,
+                    avatarURLString: avatar
+                )
+            }
+        }
+
+        if nickname.isEmpty {
+            nickname = "QQ \(uin)"
+        }
+        if avatar.isEmpty, let fallback = Self.qqAvatarURL(uin: uin) {
+            avatar = fallback
+            QQAuthStore.saveProfile(nickname: nickname, avatarURLString: avatar)
+        }
+
         return AccountProfile(
-            id: loggedIn ? uin : 0,
-            nickname: loggedIn
-                ? "QQ \(uin)"
-                : L10n.string("ui.lyrics.source.qq_music"),
-            avatarURLString: nil,
+            id: uin,
+            nickname: nickname,
+            avatarURLString: avatar.isEmpty ? nil : avatar,
             backgroundURLString: nil,
             signature: nil,
             follows: nil,
@@ -920,7 +971,7 @@ struct QQMusicAPI {
         )
     }
 
-    /// QQ 没有与网易云 `/api/v1/user/detail/<id>` 对应的公开接口，
+    /// QQ 音乐没有与网易云 `/api/v1/user/detail/<id>` 对应的公开接口，
     /// 用账号档案补齐 `AccountDetail`，避免音乐库刷新时报 301。
     func userDetail(userID: Int) async throws -> AccountDetail {
         let profile = try await accountProfile()
@@ -930,6 +981,293 @@ struct QQMusicAPI {
             listenSongs: 0,
             createDays: nil
         )
+    }
+
+    // MARK: - 登录用户资料
+
+    private struct QQLoginIdentity {
+        var nickname: String?
+        var avatarURLString: String?
+
+        var hasContent: Bool {
+            let hasNickname = !(nickname ?? "").isEmpty
+            let hasAvatar = !(avatarURLString ?? "").isEmpty
+            return hasNickname || hasAvatar
+        }
+    }
+
+    private static let profileCacheLifetime: TimeInterval = 12 * 60 * 60
+
+    private static func isProfileCacheStale(
+        nickname: String,
+        avatarURLString: String
+    ) -> Bool {
+        if nickname.isEmpty || avatarURLString.isEmpty { return true }
+        guard let fetchedAt = QQAuthStore.profileFetchedAt else { return true }
+        return Date().timeIntervalSince(fetchedAt) > profileCacheLifetime
+    }
+
+    /// QQ 号头像。qlogo 匿名可读，`nk` 传 QQ 号即可，是最稳的一路。
+    private static func qqAvatarURL(uin: Int) -> String? {
+        guard uin > 0 else { return nil }
+        return "https://thirdqq.qlogo.cn/g?b=qq&nk=\(uin)&s=640"
+    }
+
+    private func fetchLoginUserIdentity() async -> QQLoginIdentity? {
+        guard QQAuthStore.isLoggedIn else { return nil }
+        if let identity = await identityFromPlaylistBase(), identity.hasContent {
+            return identity
+        }
+        if let identity = await identityFromLoginUserInfo(), identity.hasContent {
+            return identity
+        }
+        if let identity = await identityFromProfileHomepage(), identity.hasContent {
+            return identity
+        }
+        if let identity = await identityFromProfilePage(), identity.hasContent {
+            return identity
+        }
+        return nil
+    }
+
+    /// 路线 0（最稳）：`PlaylistBaseRead / GetPlaylistByUin`。
+    ///
+    /// 音乐库刷新本来就在调它，登录态下必然成功；`v_playlist[]` 的 `nick`
+    /// 是歌单创建者昵称 —— 自己的歌单里创建者就是本人，等价于账号昵称。
+    /// 该接口不给头像，头像交给 qlogo 兜底。
+    private func identityFromPlaylistBase() async -> QQLoginIdentity? {
+        let uin = QQMusicClient.uinString
+        guard uin != "0" else { return nil }
+        let comm: [String: Any] = [
+            "ct": 24,
+            "cv": "0",
+            "format": "json",
+            "inCharset": "utf-8",
+            "outCharset": "utf-8",
+            "notice": 0,
+            "platform": "yqq.json",
+            "needNewCode": 0,
+            "uin": uin,
+            "authst": QQAuthStore.authst,
+            "tmeLoginType": QQAuthStore.loginType,
+        ]
+        let body: [String: Any] = [
+            "comm": comm,
+            "req_1": [
+                "module": "music.musicasset.PlaylistBaseRead",
+                "method": "GetPlaylistByUin",
+                "param": ["uin": uin],
+            ],
+        ]
+        guard let data = try? await client.musicuRaw(body: body, timeout: 8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let request = root["req_1"] as? [String: Any],
+              let payload = request["data"] as? [String: Any],
+              let rows = payload["v_playlist"] as? [[String: Any]]
+        else {
+            return nil
+        }
+        for row in rows {
+            let nick = Self.stringValue(in: row, keys: ["nick", "nickname", "creatorName"])
+            if let nick, !nick.isEmpty, nick != uin {
+                return QQLoginIdentity(nickname: nick, avatarURLString: nil)
+            }
+        }
+        return nil
+    }
+
+    /// 路线 1：`musicu.fcg` 的登录用户信息。
+    /// 未登录时该 module 回 `code: 1000`，登录态才给 `nick` / `headpic`。
+    private func identityFromLoginUserInfo() async -> QQLoginIdentity? {
+        let body: [String: Any] = [
+            "comm": QQMusicClient.vkeyComm(),
+            "req": [
+                "module": "music.UserInfo.userInfoServer",
+                "method": "GetLoginUserInfo",
+                "param": [String: Any](),
+            ],
+        ]
+        guard let data = try? await client.musicuRaw(body: body, timeout: 8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            return nil
+        }
+        let req = (root["req"] as? [String: Any]) ?? root
+        if let code = Self.profileIntValue(req["code"]), code != 0 {
+            return nil
+        }
+        let payload = (req["data"] as? [String: Any])
+            ?? (root["data"] as? [String: Any])
+            ?? [:]
+        let nickname = Self.stringValue(
+            in: payload,
+            keys: ["nick", "nickname", "nickName", "name", "userName", "title"]
+        )
+        let avatar = Self.normalizedAvatarURL(
+            Self.stringValue(
+                in: payload,
+                keys: [
+                    "headpic", "headPic", "headUrl", "headurl",
+                    "avatarUrl", "avatar", "avatarURL", "iconurl", "iconUrl",
+                ]
+            )
+        )
+        guard nickname != nil || avatar != nil else { return nil }
+        return QQLoginIdentity(nickname: nickname, avatarURLString: avatar)
+    }
+
+    /// 路线 2：网页版个人主页 CGI，返回体里 `data.creator` 带 `nick` / `headpic`。
+    private func identityFromProfileHomepage() async -> QQLoginIdentity? {
+        var components = URLComponents(
+            string: "https://c.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg"
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "cid", value: "205360838"),
+            URLQueryItem(name: "ct", value: "20"),
+            URLQueryItem(name: "reqfrom", value: "1"),
+            URLQueryItem(name: "userid", value: QQMusicClient.uinString),
+            URLQueryItem(name: "g_tk", value: String(QQAuthStore.gTk)),
+            URLQueryItem(name: "format", value: "json"),
+        ]
+        guard let url = components?.url,
+              let data = try? await client.getData(url, timeout: 8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            return nil
+        }
+        if let code = Self.profileIntValue(root["code"]), code != 0 {
+            return nil
+        }
+        let payload = (root["data"] as? [String: Any]) ?? root
+        let creator = (payload["creator"] as? [String: Any]) ?? payload
+        let nickname = Self.stringValue(
+            in: creator,
+            keys: ["nick", "nickname", "name", "title"]
+        )
+        let avatar = Self.normalizedAvatarURL(
+            Self.stringValue(
+                in: creator,
+                keys: ["headpic", "headPic", "avatarUrl", "avatar", "pic", "icon"]
+            )
+        )
+        guard nickname != nil || avatar != nil else { return nil }
+        return QQLoginIdentity(nickname: nickname, avatarURLString: avatar)
+    }
+
+    /// 路线 3：个人主页 SSR。页面把资料塞在 `window.__INITIAL_DATA__` 里，
+    /// 直接正则抽取比解析整棵树稳（不同版本字段层级变过好几次）。
+    /// 「我的主页」与「我的」两版页面字段不同，逐页试。
+    private func identityFromProfilePage() async -> QQLoginIdentity? {
+        let candidates = [
+            "https://y.qq.com/n/ryqq/profile",
+            "https://y.qq.com/n/ryqq/mine",
+            "https://y.qq.com/portal/profile.html",
+        ]
+        for link in candidates {
+            guard let url = URL(string: link) else { continue }
+            guard let html = try? await client.getText(url), !html.isEmpty else {
+                continue
+            }
+            let nickname = Self.firstMatch(
+                in: html,
+                patterns: [
+                    "\"nick\"\\s*:\\s*\"([^\"]{1,80})\"",
+                    "\"nickname\"\\s*:\\s*\"([^\"]{1,80})\"",
+                ]
+            )
+            let avatar = Self.normalizedAvatarURL(
+                Self.firstMatch(
+                    in: html,
+                    patterns: [
+                        "\"headpic\"\\s*:\\s*\"([^\"]{1,400})\"",
+                        "\"headPic\"\\s*:\\s*\"([^\"]{1,400})\"",
+                        "\"avatarUrl\"\\s*:\\s*\"([^\"]{1,400})\"",
+                    ]
+                )
+            )
+            guard nickname != nil || avatar != nil else { continue }
+            return QQLoginIdentity(nickname: nickname, avatarURLString: avatar)
+        }
+        return nil
+    }
+
+    private static func profileIntValue(_ raw: Any?) -> Int? {
+        if let value = raw as? Int { return value }
+        if let value = raw as? NSNumber { return value.intValue }
+        if let value = raw as? String { return Int(value) }
+        return nil
+    }
+
+    private static func stringValue(
+        in payload: [String: Any],
+        keys: [String]
+    ) -> String? {
+        for key in keys {
+            guard let raw = payload[key] else { continue }
+            if let value = raw as? String {
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty, trimmed != "null" {
+                    return unescapeJSON(trimmed)
+                }
+            }
+            if let value = raw as? NSNumber {
+                return value.stringValue
+            }
+        }
+        return nil
+    }
+
+    /// 正则取第一个捕获组。命中后按 JSON 字符串字面量反转义，
+    /// 昵称里的 `\u5f20` 与 emoji 代理对都能还原。
+    private static func firstMatch(
+        in text: String,
+        patterns: [String]
+    ) -> String? {
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(
+                pattern: pattern,
+                options: []
+            ) else { continue }
+            let range = NSRange(text.startIndex..<text.endIndex, in: text)
+            guard let match = regex.firstMatch(in: text, options: [], range: range),
+                  match.numberOfRanges > 1,
+                  let captured = Range(match.range(at: 1), in: text)
+            else { continue }
+            let value = String(text[captured])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !value.isEmpty {
+                return unescapeJSON(value)
+            }
+        }
+        return nil
+    }
+
+    private static func unescapeJSON(_ raw: String) -> String {
+        if raw.contains("\\u") || raw.contains("\\/") {
+            if let data = "\"\(raw)\"".data(using: .utf8),
+               let decoded = try? JSONDecoder().decode(String.self, from: data) {
+                return decoded
+            }
+        }
+        return raw.replacingOccurrences(of: "\\/", with: "/")
+    }
+
+    /// 头像 URL 归一：补协议、`//` 补 `https:`、`http` 升 `https`
+    /// （ATS 只放行 https，http 头像会被直接拦掉）。
+    private static func normalizedAvatarURL(_ raw: String?) -> String? {
+        guard var value = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else {
+            return nil
+        }
+        value = unescapeJSON(value)
+        if value.hasPrefix("//") {
+            value = "https:" + value
+        }
+        if value.hasPrefix("http://") {
+            value = "https://" + String(value.dropFirst("http://".count))
+        }
+        guard value.hasPrefix("https://") else { return nil }
+        return value
     }
 
     // MARK: - 收藏专辑 / 收藏歌手

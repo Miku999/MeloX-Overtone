@@ -48,6 +48,19 @@ nonisolated enum QQAuthStore {
         UserDefaults.standard.string(forKey: "qq.melox.auth.nickname.v1") ?? ""
     }
 
+    /// 头像 URL 缓存。QQ 头像走 `thirdqq.qlogo.cn`，是完整 URL 不是图床 ID。
+    static var avatarURLString: String {
+        UserDefaults.standard.string(forKey: "qq.melox.auth.avatar.v1") ?? ""
+    }
+
+    /// 资料拉取时间。用于决定账号页要不要重新打接口。
+    static var profileFetchedAt: Date? {
+        let stamp = UserDefaults.standard.double(
+            forKey: "qq.melox.auth.profile.fetched_at.v1"
+        )
+        return stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
+    }
+
     /// 登录方式：1 = QQ，2 = 微信。
     ///
     /// `musicu.fcg` 的 `comm.tmeLoginType` 必须与真实方式一致，
@@ -135,10 +148,35 @@ nonisolated enum QQAuthStore {
         UserDefaults.standard.set(value, forKey: "qq.melox.auth.nickname.v1")
     }
 
+    /// 一次写入昵称 + 头像 + 时间戳。参数为 nil / 空串时保留旧值，
+    /// 避免「这次接口只回了昵称」把已经拿到的头像覆盖成空。
+    static func saveProfile(nickname: String?, avatarURLString: String?) {
+        let defaults = UserDefaults.standard
+        if let nickname, !nickname.isEmpty {
+            defaults.set(nickname, forKey: "qq.melox.auth.nickname.v1")
+        }
+        if let avatarURLString, !avatarURLString.isEmpty {
+            defaults.set(avatarURLString, forKey: "qq.melox.auth.avatar.v1")
+        }
+        defaults.set(
+            Date().timeIntervalSince1970,
+            forKey: "qq.melox.auth.profile.fetched_at.v1"
+        )
+    }
+
+    /// 让下次 `accountProfile()` 重新打接口。账号页下拉刷新时调用。
+    static func invalidateProfileCache() {
+        UserDefaults.standard.removeObject(
+            forKey: "qq.melox.auth.profile.fetched_at.v1"
+        )
+    }
+
     static func clear() {
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: cookieKey)
         defaults.removeObject(forKey: uinKey)
         defaults.removeObject(forKey: "qq.melox.auth.nickname.v1")
+        defaults.removeObject(forKey: "qq.melox.auth.avatar.v1")
+        defaults.removeObject(forKey: "qq.melox.auth.profile.fetched_at.v1")
     }
 }

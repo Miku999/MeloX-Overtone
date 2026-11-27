@@ -42,9 +42,11 @@ struct AccountHomeView: View {
             isLoading: phase == .loading,
             failureMessage: errorMessage,
             onRetry: {
-                Task { await load() }
+                Task { await load(forceProfileRefresh: true) }
             },
-            onRefresh: load
+            onRefresh: {
+                await load(forceProfileRefresh: true)
+            }
         )
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -90,7 +92,7 @@ struct AccountHomeView: View {
 
             Menu {
                 Button {
-                    Task { await load() }
+                    Task { await load(forceProfileRefresh: true) }
                 } label: {
                     Label("ui.common.refresh", systemImage: "arrow.clockwise")
                 }
@@ -127,8 +129,13 @@ struct AccountHomeView: View {
         accessibilityReduceMotion ? nil : .easeOut(duration: 0.18)
     }
 
-    private func load() async {
+    private func load(forceProfileRefresh: Bool = false) async {
         guard phase != .loading else { return }
+
+        // 下拉刷新 / 重试时把昵称头像缓存作废，用户主动刷新应该真的重新拉一次。
+        if forceProfileRefresh {
+            QQAuthStore.invalidateProfileCache()
+        }
 
         phase = .loading
         errorMessage = nil
